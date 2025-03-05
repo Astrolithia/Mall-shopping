@@ -5,7 +5,12 @@ import com.qvtu.mallshopping.model.Product;
 import com.qvtu.mallshopping.model.ProductStatus;
 import com.qvtu.mallshopping.repository.ProductRepository;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+
+import java.util.List;
 
 
 @Service
@@ -26,5 +31,19 @@ public class ProductService {
         product.setStatus(ProductStatus.DRAFT); // 新创建的商品默认为草稿状态
 
         return productRepository.save(product);
+    }
+
+    public List<Product> listProducts(String title, ProductStatus status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        if (title != null && status != null) {
+            return productRepository.findByTitleContainingAndStatus(title, status, pageable);
+        } else if (title != null) {
+            return productRepository.findByTitleContaining(title, pageable);
+        } else if (status != null) {
+            return productRepository.findByStatus(status, pageable);
+        } else {
+            return productRepository.findAll(pageable).getContent();
+        }
     }
 }
