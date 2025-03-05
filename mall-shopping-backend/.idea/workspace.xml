@@ -5,19 +5,29 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b1ac2843-4f97-4d53-b3b3-2029f58c811a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/qvtu/App.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/com/qvtu/AppTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/controller/ProductController.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/controller/ProductController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/dto/ProductRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/dto/ProductRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/model/Product.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/model/Product.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/model/ProductStatus.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/model/ProductStatus.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/repository/ProductRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/repository/ProductRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/service/ProductService.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/service/ProductService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
@@ -38,6 +48,9 @@
   "associatedIndex": 1
 }]]></component>
   <component name="ProjectId" id="2tsWvGN07qPOTVjDcWsP2arsHSb" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -93,7 +106,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1741141492913</updated>
-      <workItem from="1741141493910" duration="1270000" />
+      <workItem from="1741141493910" duration="3320000" />
     </task>
     <servers />
   </component>

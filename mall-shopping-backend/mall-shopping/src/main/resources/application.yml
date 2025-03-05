@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: mall-shopping
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mall
+    username: astrolithia
+    password: 030808
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
