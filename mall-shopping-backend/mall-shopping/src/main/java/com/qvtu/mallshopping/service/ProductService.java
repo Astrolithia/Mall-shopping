@@ -63,17 +63,22 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("商品不存在"));
 
-        // 如果handle发生变化，需要检查新handle是否已存在
-        if (request.getHandle() != null &&
-            !request.getHandle().equals(product.getHandle()) &&
+        // 如果handle发生变化,需要检查新handle是否已存在
+        if (request.getHandle() != null && 
+            !request.getHandle().equals(product.getHandle()) && 
             productRepository.existsByHandle(request.getHandle())) {
-            throw new RuntimeException("商品Handle已存在");
+            throw new RuntimeException("商品handle已存在");
         }
 
         // 更新商品信息
         BeanUtils.copyProperties(request, product);
-
+        
         // 保存更新
         return productRepository.save(product);
+    }
+
+    public Product getProduct(Long id) {
+        return productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("商品不存在: " + id));
     }
 }

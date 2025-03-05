@@ -50,4 +50,51 @@ export async function GET(
       error: error.message
     })
   }
+}
+
+export async function POST(
+  req: MedusaRequest, 
+  res: MedusaResponse
+) {
+  try {
+    // 创建测试商品数据
+    const testProduct = {
+      title: "测试商品",
+      handle: "test-product",
+      description: "这是一个测试商品",
+      thumbnail: "https://example.com/test.jpg",
+      isGiftcard: false,
+      discountable: true,
+      subtitle: "测试副标题",
+      weight: 1.0,
+      length: 10.0,
+      height: 10.0,
+      width: 10.0,
+      originCountry: "CN",
+      material: "测试材料"
+    }
+
+    // 调用Java后端API创建商品
+    const response = await fetch('http://localhost:8080/api/products', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(testProduct)
+    })
+
+    if (!response.ok) {
+      throw new Error('创建商品失败')
+    }
+
+    const data = await response.json()
+    res.json(data)
+
+  } catch (error) {
+    console.error('Error creating product:', error)
+    res.status(500).json({
+      message: "创建商品失败",
+      error: error.message
+    })
+  }
 } 
