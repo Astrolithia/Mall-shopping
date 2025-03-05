@@ -46,4 +46,16 @@ public class ProductService {
             return productRepository.findAll(pageable).getContent();
         }
     }
+
+    public long countProducts(String title, ProductStatus status) {
+        if (title != null && status != null) {
+            return productRepository.countByTitleContainingAndStatus(title, status);
+        } else if (title != null) {
+            return productRepository.countByTitleContaining(title);
+        } else if (status != null) {
+            return productRepository.countByStatus(status);
+        } else {
+            return productRepository.count();
+        }
+    }
 }

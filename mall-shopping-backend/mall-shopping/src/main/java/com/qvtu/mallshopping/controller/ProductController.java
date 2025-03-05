@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/products")
@@ -26,12 +28,20 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Product>> listProducts(
+    public ResponseEntity<Map<String, Object>> listProducts(
             @RequestParam(required = false) String title,
-            @RequestParam(required = false)ProductStatus status,
+            @RequestParam(required = false) ProductStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         List<Product> products = productService.listProducts(title, status, page, size);
-        return ResponseEntity.ok(products);
+        long total = productService.countProducts(title, status);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("products", products);
+        response.put("count", total);
+        response.put("offset", page * size);
+        response.put("limit", size);
+        
+        return ResponseEntity.ok(response);
     }
 }

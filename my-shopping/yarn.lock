@@ -2051,7 +2051,7 @@
   resolved "https://registry.npmjs.org/@medusajs/file/-/file-2.6.0.tgz"
   integrity sha512-FrvKzdQh44oqewt9XoxYzVY7EiTm68TTf+kV8wEN2uzT+RuYPbo8CkkLS2mSlqyAxg9R1R/DYD4JA7UC67w8jw==
 
-"@medusajs/framework@2.6.0":
+"@medusajs/framework@^2.6.0":
   version "2.6.0"
   resolved "https://registry.npmjs.org/@medusajs/framework/-/framework-2.6.0.tgz"
   integrity sha512-mzxGDlt8U0+0EbQqNCUCcUeeYYpi3MazziamgXvOrawuZPVklKv/NnTJRswjUf5h5z3fjXP2ibZihEJwz5m5pQ==
@@ -7096,6 +7096,11 @@ fs.realpath@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/fs.realpath/-/fs.realpath-1.0.0.tgz"
   integrity sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==
+
+fsevents@^2.3.2, fsevents@~2.3.2, fsevents@~2.3.3:
+  version "2.3.3"
+  resolved "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz"
+  integrity sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==
 
 function-bind@^1.1.2:
   version "1.1.2"
