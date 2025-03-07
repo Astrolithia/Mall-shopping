@@ -415,3 +415,38 @@ export async function PUT(
     })
   }
 }
+export async function DELETE(
+  req: MedusaRequest,
+  res: MedusaResponse
+) {
+  try {
+    // 从URL中获取商品ID
+    const id = req.params.id
+    
+    // 调用后端删除API
+    const response = await fetch(`http://localhost:8080/api/products/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error('删除商品失败')
+    }
+
+    // 返回成功响应，格式参考 Medusa 文档
+    return res.status(200).json({
+      id: id,
+      object: "product",
+      deleted: true
+    })
+
+  } catch (error) {
+    console.error('删除商品时发生错误:', error)
+    return res.status(500).json({
+      message: "删除商品失败",
+      error: error.message
+    })
+  }
+}
