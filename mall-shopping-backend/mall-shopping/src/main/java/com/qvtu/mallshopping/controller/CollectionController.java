@@ -28,9 +28,6 @@ public class CollectionController {
             System.out.println("=== 开始获取系列列表 ===");
             System.out.println("查询参数: " + String.format("title=%s, page=%d, size=%d", title, page, size));
 
-            // 确保 size 不小于请求的值
-            size = Math.max(size, 20);
-
             List<Collection> collections = collectionService.listCollections(title, page, size);
             long total = collectionService.countCollections(title);
 
@@ -40,16 +37,7 @@ public class CollectionController {
             response.put("offset", page * size);
             response.put("limit", size);
 
-            System.out.println("查询到的系列数量: " + collections.size());
-            System.out.println("总记录数: " + total);
-            System.out.println("返回数据: " + response);
-
-            return ResponseEntity
-                .ok()
-                .header("Cache-Control", "no-cache, no-store, must-revalidate")
-                .header("Pragma", "no-cache")
-                .header("Expires", "0")
-                .body(response);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace(); // 添加错误日志
             return ResponseEntity.internalServerError().build();
@@ -71,10 +59,16 @@ public class CollectionController {
     @GetMapping("/{id}")
     public ResponseEntity<Collection> getCollection(@PathVariable Long id) {
         try {
+            System.out.println("=== 开始获取系列详情 ===");
+            System.out.println("系列ID: " + id);
+            
             Collection collection = collectionService.getCollection(id);
+            System.out.println("查询到的系列: " + collection);
+            
             return ResponseEntity.ok(collection);
         } catch (Exception e) {
-            e.printStackTrace(); // 添加错误日志
+            System.err.println("获取系列详情失败: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.notFound().build();
         }
     }
@@ -84,10 +78,16 @@ public class CollectionController {
             @PathVariable Long id,
             @RequestBody CollectionCreateRequest request) {
         try {
+            System.out.println("=== 开始处理更新系列请求 ===");
+            System.out.println("系列ID: " + id);
+            System.out.println("更新数据: " + request);
+
             Collection collection = collectionService.updateCollection(id, request);
+            
+            System.out.println("更新成功: " + collection);
             return ResponseEntity.ok(collection);
         } catch (Exception e) {
-            e.printStackTrace(); // 添加错误日志
+            e.printStackTrace();
             return ResponseEntity.notFound().build();
         }
     }

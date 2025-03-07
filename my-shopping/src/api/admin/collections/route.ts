@@ -6,20 +6,16 @@ export async function GET(
 ) {
   try {
     console.log('=== 开始获取系列列表 ===');
-    // 获取查询参数，注意 offset 和 limit 的处理
     const { offset = 0, limit = 20, fields } = req.query
     const page = Math.floor(Number(offset) / Number(limit));
     const size = Number(limit);
 
-    // 添加随机参数以避免缓存
-    const timestamp = Date.now();
     const response = await fetch(
-      `http://localhost:8080/api/collections?page=${page}&size=${size}&_t=${timestamp}`,
+      `http://localhost:8080/api/collections?page=${page}&size=${size}`,
       {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
+          'Content-Type': 'application/json'
         }
       }
     );
@@ -36,11 +32,12 @@ export async function GET(
       id: collection.id,
       title: collection.title,
       handle: collection.handle || '',
-      products: collection.products || [],
+      description: collection.description || '',
       created_at: collection.createdAt,
       updated_at: collection.updatedAt,
       deleted_at: null,
-      metadata: collection.metadata ? JSON.parse(collection.metadata) : {}
+      metadata: collection.metadata || {},
+      products: [], // 如果需要产品数据，可以从 collection.products 获取
     }));
 
     const responseData = {

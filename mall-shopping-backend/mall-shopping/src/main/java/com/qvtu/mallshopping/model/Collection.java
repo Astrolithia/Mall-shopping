@@ -5,10 +5,13 @@ import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.hibernate.annotations.Type;
+import com.vladmihalcea.hibernate.type.json.JsonType;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Entity
@@ -39,8 +42,9 @@ public class Collection {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @Column(columnDefinition = "TEXT")
-    private String metadata;
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> metadata;
 
     // 添加辅助方法来管理双向关系
     public void addProduct(Product product) {

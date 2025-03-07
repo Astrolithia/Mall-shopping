@@ -51,8 +51,19 @@ public class CollectionService {
     }
 
     public Collection getCollection(Long id) {
-        return collectionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("系列不存在: " + id));
+        System.out.println("正在查询系列，ID: " + id);
+        try {
+            Collection collection = collectionRepository.findById(id)
+                    .orElseThrow(() -> {
+                        System.err.println("系列不存在，ID: " + id);
+                        return new ResourceNotFoundException("系列不存在: " + id);
+                    });
+            System.out.println("查询成功: " + collection);
+            return collection;
+        } catch (Exception e) {
+            System.err.println("查询系列失败: " + e.getMessage());
+            throw e;
+        }
     }
 
     public Collection updateCollection(Long id, CollectionCreateRequest request) {
@@ -62,11 +73,11 @@ public class CollectionService {
         if (request.getTitle() != null) {
             collection.setTitle(request.getTitle());
         }
-        if (request.getDescription() != null) {
-            collection.setDescription(request.getDescription());
-        }
         if (request.getHandle() != null) {
             collection.setHandle(request.getHandle());
+        }
+        if (request.getDescription() != null) {
+            collection.setDescription(request.getDescription());
         }
         if (request.getThumbnail() != null) {
             collection.setThumbnail(request.getThumbnail());

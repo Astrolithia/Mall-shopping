@@ -1,6 +1,7 @@
 package com.qvtu.mallshopping.dto;
 
 import lombok.Data;
+import java.util.Map;
 
 @Data
 public class CollectionCreateRequest {
@@ -8,5 +9,5 @@ public class CollectionCreateRequest {
     private String handle;
     private String description;
     private String thumbnail;
-    private String metadata;
+    private Map<String, Object> metadata;
 }
