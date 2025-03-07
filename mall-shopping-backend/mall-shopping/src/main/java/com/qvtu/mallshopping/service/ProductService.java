@@ -4,6 +4,7 @@ import com.qvtu.mallshopping.dto.ProductCreateRequest;
 import com.qvtu.mallshopping.dto.ProductOptionDTO;
 import com.qvtu.mallshopping.dto.ProductRequest;
 import com.qvtu.mallshopping.dto.ProductVariantDTO;
+import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 import com.qvtu.mallshopping.model.Product;
 import com.qvtu.mallshopping.model.ProductOption;
 import com.qvtu.mallshopping.enums.ProductStatus;
@@ -13,12 +14,16 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 
 @Service
+@Transactional
 public class ProductService {
     private final ProductRepository productRepository;
 
@@ -120,4 +125,15 @@ public class ProductService {
         }
         return productRepository.save(product);
     }
+
+    public void deleteProduct(Long id) {
+        // 检查商品是否存在
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("商品不存在: " + id));
+
+        // 直接物理删除
+        productRepository.delete(product);
+    }
+
+
 }

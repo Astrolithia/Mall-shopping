@@ -55,4 +55,5 @@ public class Product {
     @JsonIgnore
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductVariant> variants = new ArrayList<>();
+
 }

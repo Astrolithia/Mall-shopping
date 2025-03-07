@@ -1,6 +1,7 @@
 package com.qvtu.mallshopping.controller;
 
 import com.qvtu.mallshopping.dto.*;
+import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 import com.qvtu.mallshopping.model.Product;
 import com.qvtu.mallshopping.model.ProductOption;
 import com.qvtu.mallshopping.enums.ProductStatus;
@@ -124,5 +125,18 @@ public class ProductController {
     public ResponseEntity<Product> getProduct(@PathVariable Long id) {
         Product product = productService.getProduct(id);
         return ResponseEntity.ok(product);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+        try {
+            productService.deleteProduct(id);
+            return ResponseEntity.ok().build();
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("删除商品失败: " + e.getMessage());
+        }
     }
 }
