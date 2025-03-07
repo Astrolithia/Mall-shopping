@@ -1,9 +1,6 @@
 package com.qvtu.mallshopping.service;
 
-import com.qvtu.mallshopping.dto.ProductCreateRequest;
-import com.qvtu.mallshopping.dto.ProductOptionDTO;
-import com.qvtu.mallshopping.dto.ProductRequest;
-import com.qvtu.mallshopping.dto.ProductVariantDTO;
+import com.qvtu.mallshopping.dto.*;
 import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 import com.qvtu.mallshopping.model.Product;
 import com.qvtu.mallshopping.model.ProductOption;
@@ -69,19 +66,33 @@ public class ProductService {
         }
     }
 
-    public Product updateProduct(Long id, ProductRequest request) {
+    public Product updateProduct(Long id, ProductUpdateRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("商品不存在"));
 
-        // 如果handle发生变化,需要检查新handle是否已存在
-        if (request.getHandle() != null && 
-            !request.getHandle().equals(product.getHandle()) && 
-            productRepository.existsByHandle(request.getHandle())) {
-            throw new RuntimeException("商品handle已存在");
+        // 更新基本信息
+        if (request.getTitle() != null) {
+            product.setTitle(request.getTitle());
+        }
+        if (request.getSubtitle() != null) {
+            product.setSubtitle(request.getSubtitle());
+        }
+        if (request.getDescription() != null) {
+            product.setDescription(request.getDescription());
+        }
+        if (request.getHandle() != null) {
+            product.setHandle(request.getHandle());
         }
 
-        // 更新商品信息
-        BeanUtils.copyProperties(request, product);
+        // 更新状态
+        if (request.getStatus() != null) {
+            try {
+                ProductStatus newStatus = ProductStatus.valueOf(request.getStatus().toUpperCase());
+                product.setStatus(newStatus);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("无效的商品状态: " + request.getStatus());
+            }
+        }
         
         // 保存更新
         return productRepository.save(product);

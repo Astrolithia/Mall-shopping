@@ -115,11 +115,19 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(
+    public ResponseEntity<?> updateProduct(
             @PathVariable Long id,
-            @RequestBody ProductRequest request) {
-        Product updatedProduct = productService.updateProduct(id, request);
-        return ResponseEntity.ok(updatedProduct);
+            @RequestBody ProductUpdateRequest request
+    ) {
+        try {
+            Product updatedProduct = productService.updateProduct(id, request);
+            return ResponseEntity.ok(updatedProduct);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("更新商品失败: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{id}")
@@ -144,7 +152,7 @@ public class ProductController {
     @PutMapping("/{id}/status")
     public ResponseEntity<?> updateProductStatus(
             @PathVariable Long id,
-            @RequestBody ProductStatusRequest request
+            @RequestBody ProductUpdateRequest request
     ) {
         try {
             Product updateProduct = productService.updateProductStatus(id, request.getStatus());
@@ -157,7 +165,3 @@ public class ProductController {
     }
 }
 
-@Data
-class ProductStatusRequest {
-    private String status;
-}
