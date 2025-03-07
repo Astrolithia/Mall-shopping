@@ -1,8 +1,13 @@
 package com.qvtu.mallshopping.service;
 
+import com.qvtu.mallshopping.dto.ProductCreateRequest;
+import com.qvtu.mallshopping.dto.ProductOptionDTO;
 import com.qvtu.mallshopping.dto.ProductRequest;
+import com.qvtu.mallshopping.dto.ProductVariantDTO;
 import com.qvtu.mallshopping.model.Product;
-import com.qvtu.mallshopping.model.ProductStatus;
+import com.qvtu.mallshopping.model.ProductOption;
+import com.qvtu.mallshopping.enums.ProductStatus;
+import com.qvtu.mallshopping.model.ProductVariant;
 import com.qvtu.mallshopping.repository.ProductRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.PageRequest;
@@ -80,5 +85,39 @@ public class ProductService {
     public Product getProduct(Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("商品不存在: " + id));
+    }
+
+    public Product createProduct(ProductCreateRequest request) {
+        // 验证handle唯一性
+        if (request.getHandle() != null && productRepository.existsByHandle(request.getHandle())) {
+            throw new RuntimeException("商品handle已存在");
+        }
+
+        Product product = new Product();
+        BeanUtils.copyProperties(request, product);
+
+        // 设置状态
+        product.setStatus(ProductStatus.valueOf(request.getStatus().toUpperCase()));
+
+        // 处理选项
+        if (request.getOptions() != null) {
+            for (ProductOptionDTO optionDTO : request.getOptions()) {
+                ProductOption option = new ProductOption();
+                option.setTitle(optionDTO.getTitle());
+                option.setProduct(product);
+                product.getOptions().add(option);
+            }
+        }
+
+        // 处理变体
+        if (request.getVariants() != null) {
+            for (ProductVariantDTO variantDTO : request.getVariants()) {
+                ProductVariant variant = new ProductVariant();
+                BeanUtils.copyProperties(variantDTO, variant);
+                variant.setProduct(product);
+                product.getVariants().add(variant);
+            }
+        }
+        return productRepository.save(product);
     }
 }

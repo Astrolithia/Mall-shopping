@@ -1,7 +1,7 @@
 package com.qvtu.mallshopping.repository;
 
 import com.qvtu.mallshopping.model.Product;
-import com.qvtu.mallshopping.model.ProductStatus;
+import com.qvtu.mallshopping.enums.ProductStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 

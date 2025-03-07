@@ -5,11 +5,24 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b1ac2843-4f97-4d53-b3b3-2029f58c811a" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/config/WebConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/config/WebConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/controller/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/controller/AuthController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/dto/PriceResponseDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/dto/ProductCreateRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/dto/ProductOptionDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/dto/ProductOptionResponseDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/dto/ProductResponseDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/dto/ProductVariantDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/dto/ProductVariantResponseDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/enums/ProductStatus.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/model/ProductOption.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/model/ProductVariant.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/controller/ProductController.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/controller/ProductController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/model/Product.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/model/Product.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/model/ProductStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/repository/ProductRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/repository/ProductRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/service/ProductService.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/service/ProductService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../my-shopping/src/api/admin/products/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../my-shopping/src/api/admin/products/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../my-shopping/src/api/admin/products/[id]/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../my-shopping/src/api/admin/products/[id]/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../my-shopping/src/api/app/products/[id]/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../my-shopping/src/api/app/products/[id]/route.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -100,7 +113,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1741141492913</updated>
-      <workItem from="1741141493910" duration="7147000" />
+      <workItem from="1741141493910" duration="11109000" />
     </task>
     <servers />
   </component>

@@ -1,10 +1,16 @@
+// model/Product.java
 package com.qvtu.mallshopping.model;
 
+import com.qvtu.mallshopping.enums.ProductStatus;
 import jakarta.persistence.*;
 import lombok.Data;
-import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
-import org.hibernate.annotations.Type;
-import java.util.Map;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
@@ -17,16 +23,6 @@ public class Product {
     @Column(nullable = false)
     private String title;
 
-    @Column(unique = true)
-    private String handle;
-
-    private Boolean isGiftcard = false;
-
-    @Enumerated(EnumType.STRING)
-    private ProductStatus status;
-
-    private Boolean discountable = true;
-
     private String subtitle;
 
     @Column(columnDefinition = "TEXT")
@@ -34,19 +30,29 @@ public class Product {
 
     private String thumbnail;
 
+    @Column(unique = true)
+    private String handle;
+
+    @Enumerated(EnumType.STRING)
+    private ProductStatus status;
+
     private Double weight;
     private Double length;
     private Double height;
     private Double width;
 
-    private String originCountry;
-    private String hsCode;
-    private String midCode;
-    private String material;
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
-    private String externalId;
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private Map<String, Object> metadata;
+    @JsonIgnore
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductOption> options = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductVariant> variants = new ArrayList<>();
 }
