@@ -34,7 +34,8 @@ public class Product {
     private String handle;
 
     @Enumerated(EnumType.STRING)
-    private ProductStatus status;
+    @Column(nullable = false)
+    private ProductStatus status = ProductStatus.DRAFT;
 
     private Double weight;
     private Double length;

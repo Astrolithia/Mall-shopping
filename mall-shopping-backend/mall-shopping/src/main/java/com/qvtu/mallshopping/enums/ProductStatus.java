@@ -1,8 +1,8 @@
 package com.qvtu.mallshopping.enums;
 
-
 public enum ProductStatus {
-    DRAFT,      // 草稿
     PUBLISHED,  // 已发布
-    ARCHIVED    // 已归档
+    DRAFT,      // 草稿
+    PROPOSED,   // 待审核
+    REJECTED    // 已拒绝
 }

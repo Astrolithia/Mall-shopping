@@ -7,6 +7,7 @@ import com.qvtu.mallshopping.model.ProductOption;
 import com.qvtu.mallshopping.enums.ProductStatus;
 import com.qvtu.mallshopping.model.ProductVariant;
 import com.qvtu.mallshopping.service.ProductService;
+import lombok.Data;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -139,4 +140,24 @@ public class ProductController {
                     .body("删除商品失败: " + e.getMessage());
         }
     }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateProductStatus(
+            @PathVariable Long id,
+            @RequestBody ProductStatusRequest request
+    ) {
+        try {
+            Product updateProduct = productService.updateProductStatus(id, request.getStatus());
+            return ResponseEntity.ok(updateProduct);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+}
+
+@Data
+class ProductStatusRequest {
+    private String status;
 }

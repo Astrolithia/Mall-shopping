@@ -136,4 +136,23 @@ public class ProductService {
     }
 
 
+    public Product updateProductStatus(Long id, String status) {
+        // 查找商品
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("商品不存在： " + id));
+
+        try {
+            // 转换状态字符串为枚举（忽略大小写）
+            ProductStatus newStatus = ProductStatus.valueOf(status.toUpperCase());
+
+            // 更新状态
+            product.setStatus(newStatus);
+
+            // 保存更新
+            return productRepository.save(product);
+
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("无效的商品状态： " + status);
+        }
+    }
 }
