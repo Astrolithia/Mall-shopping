@@ -6,10 +6,13 @@ export async function GET(
 ) {
   try {
     console.log('=== 开始获取系列列表 ===');
+    // 获取查询参数，注意 offset 和 limit 的处理
     const { offset = 0, limit = 20, fields } = req.query
     const page = Math.floor(Number(offset) / Number(limit));
     const size = Number(limit);
 
+    // 添加随机参数以避免缓存
+    const timestamp = Date.now();
     const response = await fetch(
       `http://localhost:8080/api/collections?page=${page}&size=${size}`,
       {
@@ -37,7 +40,7 @@ export async function GET(
       updated_at: collection.updatedAt,
       deleted_at: null,
       metadata: collection.metadata || {},
-      products: [], // 如果需要产品数据，可以从 collection.products 获取
+      products: collection.products || []
     }));
 
     const responseData = {
@@ -78,7 +81,7 @@ export async function POST(
     const collectionRequest = {
       title,
       handle,
-      metadata: JSON.stringify(metadata)
+      metadata: metadata
     };
 
     console.log('发送到后端的数据:', collectionRequest);
@@ -92,30 +95,31 @@ export async function POST(
       body: JSON.stringify(collectionRequest)
     });
 
-    const createdCollection = await response.json();
-
-    // 检查响应状态和数据
-    if (!response.ok || !createdCollection) {
-      throw new Error('创建系列失败');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || '创建系列失败');
     }
+
+    const createdCollection = await response.json();
 
     // 格式化返回数据
     const formattedCollection = {
       id: createdCollection.id,
       title: createdCollection.title,
       handle: createdCollection.handle || '',
-      products: [],
+      description: createdCollection.description || '',
       created_at: createdCollection.createdAt,
       updated_at: createdCollection.updatedAt,
       deleted_at: null,
-      metadata: createdCollection.metadata ? JSON.parse(createdCollection.metadata) : {}
+      metadata: createdCollection.metadata || {},
+      products: []
     };
 
     // 返回带有重定向信息的响应
     res.status(201).json({
       collection: formattedCollection,
       redirect: {
-        path: `/app/collections/${formattedCollection.id}`, // 重定向到系列详情页
+        path: `/app/collections/${formattedCollection.id}`,
         replace: true
       }
     });

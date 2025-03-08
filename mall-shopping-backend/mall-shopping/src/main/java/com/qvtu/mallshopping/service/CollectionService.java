@@ -3,7 +3,9 @@ package com.qvtu.mallshopping.service;
 import com.qvtu.mallshopping.dto.CollectionCreateRequest;
 import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 import com.qvtu.mallshopping.model.Collection;
+import com.qvtu.mallshopping.model.Product;
 import com.qvtu.mallshopping.repository.CollectionRepository;
+import com.qvtu.mallshopping.repository.ProductRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -16,9 +18,11 @@ import java.util.List;
 @Transactional
 public class CollectionService {
     private final CollectionRepository collectionRepository;
+    private final ProductRepository productRepository;
 
-    public CollectionService(CollectionRepository collectionRepository) {
+    public CollectionService(CollectionRepository collectionRepository, ProductRepository productRepository) {
         this.collectionRepository = collectionRepository;
+        this.productRepository = productRepository;
     }
 
     public Collection createCollection(CollectionCreateRequest request) {
@@ -93,5 +97,49 @@ public class CollectionService {
         Collection collection = collectionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("系列不存在: " + id));
         collectionRepository.delete(collection);
+    }
+
+    public Collection addProductsToCollection(Long collectionId, List<Long> productIds) {
+        try {
+            System.out.println("=== 开始添加产品到系列 ===");
+            System.out.println("系列ID: " + collectionId);
+            System.out.println("要添加的产品IDs: " + productIds);
+            
+            Collection collection = getCollection(collectionId);
+            System.out.println("找到系列: " + collection);
+            
+            List<Product> productsToAdd = productRepository.findAllById(productIds);
+            System.out.println("找到的产品: " + productsToAdd);
+            
+            for (Product product : productsToAdd) {
+                System.out.println("处理产品: " + product.getId());
+                if (product.getCollection() != null) {
+                    System.out.println("产品已在其他系列中，先移除");
+                    product.getCollection().removeProduct(product);
+                }
+                collection.addProduct(product);
+                System.out.println("产品添加成功");
+            }
+
+            Collection savedCollection = collectionRepository.save(collection);
+            System.out.println("保存系列成功: " + savedCollection);
+            return savedCollection;
+            
+        } catch (Exception e) {
+            System.err.println("添加产品到系列失败: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    public Collection removeProductsFromCollection(Long collectionId, List<Long> productIds) {
+        Collection collection = getCollection(collectionId);
+        
+        List<Product> productsToRemove = productRepository.findAllById(productIds);
+        for (Product product : productsToRemove) {
+            collection.removeProduct(product);
+        }
+
+        return collectionRepository.save(collection);
     }
 }

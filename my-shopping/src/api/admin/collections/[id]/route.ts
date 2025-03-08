@@ -37,11 +37,11 @@ export async function GET(
       title: collection.title,
       handle: collection.handle || '',
       description: collection.description || '',
-      products: collection.products || [],
       created_at: collection.createdAt,
       updated_at: collection.updatedAt,
       deleted_at: null,
-      metadata: collection.metadata || {}
+      metadata: collection.metadata || {},
+      products: collection.products || []
     };
 
     console.log('发送到前端的响应:', { collection: formattedCollection });
@@ -108,11 +108,11 @@ export async function PUT(
       title: updatedCollection.title,
       handle: updatedCollection.handle || '',
       description: updatedCollection.description || '',
-      products: updatedCollection.products || [],
       created_at: updatedCollection.createdAt,
       updated_at: updatedCollection.updatedAt,
       deleted_at: null,
-      metadata: updatedCollection.metadata || {}
+      metadata: updatedCollection.metadata || {},
+      products: updatedCollection.products || []
     };
 
     // 返回标准的响应格式
@@ -204,11 +204,11 @@ export async function POST(
       title: updatedCollection.title,
       handle: updatedCollection.handle || '',
       description: updatedCollection.description || '',
-      products: updatedCollection.products || [],
       created_at: updatedCollection.createdAt,
       updated_at: updatedCollection.updatedAt,
       deleted_at: null,
-      metadata: updatedCollection.metadata || {}
+      metadata: updatedCollection.metadata || {},
+      products: [] // 默认为空数组
     };
 
     // 返回标准的响应格式

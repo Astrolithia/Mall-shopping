@@ -7,8 +7,8 @@
     <list default="true" id="b1ac2843-4f97-4d53-b3b3-2029f58c811a" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/controller/CollectionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/controller/CollectionController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/dto/CollectionCreateRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/dto/CollectionCreateRequest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/model/Collection.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/model/Collection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/model/Product.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/model/Product.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/service/CollectionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/service/CollectionService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../my-shopping/src/api/admin/collections/[id]/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../my-shopping/src/api/admin/collections/[id]/route.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../my-shopping/src/api/admin/collections/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../my-shopping/src/api/admin/collections/route.ts" afterDir="false" />
@@ -41,6 +41,9 @@
     "accountId": "932e7429-9b04-4f04-8764-7bda73d41871"
   }
 }]]></component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="jar://$MAVEN_REPOSITORY$/org/springframework/spring-web/6.2.3/spring-web-6.2.3.jar!/org/springframework/http/converter/HttpMessageNotReadableException.class" root0="SKIP_INSPECTION" />
+  </component>
   <component name="ProjectColorInfo"><![CDATA[{
   "associatedIndex": 1
 }]]></component>
@@ -103,7 +106,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1741141492913</updated>
-      <workItem from="1741141493910" duration="21604000" />
+      <workItem from="1741141493910" duration="24686000" />
     </task>
     <servers />
   </component>

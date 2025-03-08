@@ -1,6 +1,7 @@
 package com.qvtu.mallshopping.controller;
 
 import com.qvtu.mallshopping.dto.CollectionCreateRequest;
+import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 import com.qvtu.mallshopping.model.Collection;
 import com.qvtu.mallshopping.service.CollectionService;
 import org.springframework.http.ResponseEntity;
@@ -100,6 +101,53 @@ public class CollectionController {
         } catch (Exception e) {
             e.printStackTrace(); // 添加错误日志
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/{id}/products")
+    public ResponseEntity<Collection> addProductsToCollection(
+            @PathVariable Long id,
+            @RequestBody List<Long> productIds) {
+        try {
+            System.out.println("=== 开始添加产品到系列 ===");
+            System.out.println("系列ID: " + id);
+            System.out.println("接收到的产品IDs: " + productIds);
+
+            if (productIds == null || productIds.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            Collection collection = collectionService.addProductsToCollection(id, productIds);
+            
+            System.out.println("添加成功: " + collection);
+            return ResponseEntity.ok(collection);
+        } catch (ResourceNotFoundException e) {
+            System.err.println("资源不存在: " + e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            System.err.println("添加产品到系列失败: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @DeleteMapping("/{id}/products")
+    public ResponseEntity<Collection> removeProductsFromCollection(
+            @PathVariable Long id,
+            @RequestBody List<Long> productIds) {
+        try {
+            System.out.println("=== 开始从系列移除产品 ===");
+            System.out.println("系列ID: " + id);
+            System.out.println("产品IDs: " + productIds);
+
+            Collection collection = collectionService.removeProductsFromCollection(id, productIds);
+            
+            System.out.println("移除成功: " + collection);
+            return ResponseEntity.ok(collection);
+        } catch (Exception e) {
+            System.err.println("从系列移除产品失败: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
         }
     }
 }
