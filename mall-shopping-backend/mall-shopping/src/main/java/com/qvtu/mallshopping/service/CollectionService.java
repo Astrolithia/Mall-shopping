@@ -88,10 +88,27 @@ public class CollectionService {
         return collectionRepository.save(collection);
     }
 
+    @Transactional
     public void deleteCollection(Long id) {
-        Collection collection = collectionRepository.findById(id)
+        try {
+            // 先检查系列是否存在
+            Collection collection = collectionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("系列不存在: " + id));
-        collectionRepository.delete(collection);
+
+            // 解除系列与产品的关联
+            if (collection.getProducts() != null) {
+                collection.getProducts().forEach(product -> {
+                    product.setCollection(null);
+                    productRepository.save(product);
+                });
+            }
+
+            // 删除系列
+            collectionRepository.delete(collection);
+
+        } catch (Exception e) {
+            throw new RuntimeException("删除系列失败: " + e.getMessage(), e);
+        }
     }
 
     public Collection addProductsToCollection(Long collectionId, List<Long> productIds) {

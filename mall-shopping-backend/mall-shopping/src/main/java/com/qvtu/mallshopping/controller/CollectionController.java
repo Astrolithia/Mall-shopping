@@ -95,13 +95,31 @@ public class CollectionController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteCollection(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteCollection(@PathVariable Long id) {
         try {
+            System.out.println("\n=== 开始删除系列 ===");
+            System.out.println("系列ID: " + id);
+
+            // 先检查系列是否存在
+            Collection collection = collectionService.getCollection(id);
+            if (collection == null) {
+                System.err.println("系列不存在: " + id);
+                return ResponseEntity.notFound().build();
+            }
+
+            // 删除系列
             collectionService.deleteCollection(id);
+            System.out.println("系列删除成功");
+            
             return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            e.printStackTrace(); // 添加错误日志
+
+        } catch (ResourceNotFoundException e) {
+            System.err.println("系列不存在: " + e.getMessage());
             return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            System.err.println("删除系列失败: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
         }
     }
 
