@@ -1,4 +1,5 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
+import { UpdateRequest } from "@/types/api";
 
 export async function GET_EDIT(
   req: MedusaRequest, 
@@ -112,4 +113,29 @@ export async function PUT_EDIT(
       error: error.message
     });
   }
-} 
+}
+
+export async function POST(
+  req: MedusaRequest, 
+  res: MedusaResponse
+) {
+  try {
+    const id = req.params.id;
+    const updateData = req.body as UpdateRequest;
+
+    const collectionRequest = {
+      title: updateData.title,
+      handle: updateData.handle,
+      description: updateData.description,
+      metadata: updateData.metadata || {}
+    };
+
+    // ... 其余代码保持不变
+  } catch (error) {
+    console.error('处理请求时发生错误:', error)
+    return res.status(500).json({
+      message: "操作失败",
+      error: error.message
+    })
+  }
+}

@@ -54,20 +54,15 @@ public class CollectionService {
         return collectionRepository.count();
     }
 
+    public Collection getCollection(Long id, boolean includeProducts) {
+        Collection collection = collectionRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("系列不存在: " + id));
+        collection.setIncludeProducts(includeProducts);
+        return collection;
+    }
+
     public Collection getCollection(Long id) {
-        System.out.println("正在查询系列，ID: " + id);
-        try {
-            Collection collection = collectionRepository.findById(id)
-                    .orElseThrow(() -> {
-                        System.err.println("系列不存在，ID: " + id);
-                        return new ResourceNotFoundException("系列不存在: " + id);
-                    });
-            System.out.println("查询成功: " + collection);
-            return collection;
-        } catch (Exception e) {
-            System.err.println("查询系列失败: " + e.getMessage());
-            throw e;
-        }
+        return getCollection(id, false); // 默认不包含产品数据
     }
 
     public Collection updateCollection(Long id, CollectionCreateRequest request) {

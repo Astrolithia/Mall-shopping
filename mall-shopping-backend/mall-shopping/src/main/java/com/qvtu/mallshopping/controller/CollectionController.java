@@ -7,6 +7,7 @@ import com.qvtu.mallshopping.service.CollectionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +64,7 @@ public class CollectionController {
             System.out.println("=== 开始获取系列详情 ===");
             System.out.println("系列ID: " + id);
             
-            Collection collection = collectionService.getCollection(id);
+            Collection collection = collectionService.getCollection(id, true);
             System.out.println("查询到的系列: " + collection);
             
             return ResponseEntity.ok(collection);
@@ -148,6 +149,39 @@ public class CollectionController {
             System.err.println("从系列移除产品失败: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/{id}/products")
+    public ResponseEntity<Map<String, Object>> getCollectionProducts(@PathVariable Long id) {
+        try {
+            System.out.println("\n=== 开始获取系列中的产品 ===");
+            System.out.println("系列ID: " + id);
+
+            Collection collection = collectionService.getCollection(id, true);
+            System.out.println("找到系列: " + collection);
+
+            List<Map<String, Object>> products = collection.getProductDTOs();
+            if (products == null) {
+                products = new ArrayList<>();
+            }
+            System.out.println("系列中的产品: " + products);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("products", products);
+            response.put("count", products.size());
+            response.put("offset", 0);
+            response.put("limit", 50);
+            
+            System.out.println("返回的响应数据: " + response);
+            return ResponseEntity.ok(response);
+        } catch (ResourceNotFoundException e) {
+            System.err.println("系列不存在: " + e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            System.err.println("获取系列产品失败: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

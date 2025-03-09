@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.Type;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.qvtu.mallshopping.dto.SimpleProductDTO;
 
 import java.time.LocalDateTime;
@@ -50,6 +51,44 @@ public class Collection {
     @Column(columnDefinition = "json")
     private Map<String, Object> metadata;
 
+    // 只在获取系列详情时使用
+    @JsonProperty("products")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<Map<String, Object>> getProductDTOs() {
+        // 如果不包含产品数据或产品列表为空，返回空列表而不是 null
+        if (!includeProducts || products == null) {
+            return new ArrayList<>();
+        }
+        
+        return products.stream()
+            .map(product -> {
+                Map<String, Object> dto = new HashMap<>();
+                dto.put("id", product.getId());
+                dto.put("title", product.getTitle());
+                dto.put("subtitle", product.getSubtitle());
+                dto.put("description", product.getDescription());
+                dto.put("handle", product.getHandle());
+                dto.put("thumbnail", product.getThumbnail());
+                dto.put("status", product.getStatus());
+                dto.put("weight", product.getWeight());
+                dto.put("length", product.getLength());
+                dto.put("height", product.getHeight());
+                dto.put("width", product.getWidth());
+                dto.put("created_at", product.getCreatedAt());
+                dto.put("updated_at", product.getUpdatedAt());
+                return dto;
+            })
+            .collect(Collectors.toList());
+    }
+
+    // 添加一个标志来控制是否包含产品数据
+    @Transient
+    private boolean includeProducts = false;
+
+    public void setIncludeProducts(boolean includeProducts) {
+        this.includeProducts = includeProducts;
+    }
+
     // 修改添加产品的方法
     public void addProduct(Product product) {
         if (product != null) {
@@ -69,24 +108,6 @@ public class Collection {
             products.remove(product);
             product.setCollection(null);
         }
-    }
-
-    // 修改 DTO 转换方法
-    @JsonProperty("products")
-    public List<Map<String, Object>> getProductDTOs() {
-        if (products == null) {
-            return new ArrayList<>();
-        }
-        return products.stream()
-            .map(product -> {
-                Map<String, Object> dto = new HashMap<>();
-                dto.put("id", product.getId());
-                dto.put("title", product.getTitle());
-                dto.put("handle", product.getHandle());
-                dto.put("thumbnail", product.getThumbnail());
-                return dto;
-            })
-            .collect(Collectors.toList());
     }
 
     // 添加 getter 和 setter

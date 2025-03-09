@@ -1,4 +1,5 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
+import { CollectionCreateRequest } from "@/types/api";
 
 export async function GET(
   req: MedusaRequest, 
@@ -7,7 +8,7 @@ export async function GET(
   try {
     console.log('=== 开始获取系列列表 ===');
     // 获取查询参数，注意 offset 和 limit 的处理
-    const { offset = 0, limit = 20, fields } = req.query
+    const { offset = 0, limit = 20, fields } = req.query;
     const page = Math.floor(Number(offset) / Number(limit));
     const size = Number(limit);
 
@@ -28,7 +29,7 @@ export async function GET(
     }
 
     const data = await response.json();
-    console.log('后端返回的原始数据:', data);
+    console.log('后端返回的系列列表数据:', data);
 
     // 转换数据格式以匹配 Medusa Admin UI 的期望
     const formattedCollections = data.collections.map(collection => ({
@@ -40,7 +41,7 @@ export async function GET(
       updated_at: collection.updatedAt,
       deleted_at: null,
       metadata: collection.metadata || {},
-      products: collection.products || []
+      products: [] // 列表页面不需要返回产品数据
     }));
 
     const responseData = {
@@ -50,7 +51,7 @@ export async function GET(
       limit: Number(limit)
     };
 
-    console.log('发送到前端的响应:', responseData);
+    console.log('发送到前端的系列列表响应:', responseData);
     res.json(responseData);
 
   } catch (error) {
@@ -75,7 +76,7 @@ export async function POST(
       title,
       handle,
       metadata = {}
-    } = req.body;
+    } = req.body as CollectionCreateRequest;
 
     // 构造发送到后端的数据
     const collectionRequest = {
