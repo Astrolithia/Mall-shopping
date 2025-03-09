@@ -18,9 +18,9 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     // 检查handle是否存在
     boolean existsByHandle(String handle);
     
-    // 根据父分类ID查找子分类
-    Page<Category> findByParentCategoryId(Long parentId, Pageable pageable);
+    // 根据父分类查找子分类
+    Page<Category> findByParentCategory(Category parentCategory, Pageable pageable);
     
-    // 根据父分类ID统计子分类数量
-    long countByParentCategoryId(Long parentId);
+    // 根据父分类统计子分类数量
+    long countByParentCategory(Category parentCategory);
 }

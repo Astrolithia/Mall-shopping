@@ -2,6 +2,8 @@ package com.qvtu.mallshopping.controller;
 
 import com.qvtu.mallshopping.model.Category;
 import com.qvtu.mallshopping.service.CategoryService;
+import com.qvtu.mallshopping.dto.CategoryResponseDTO;
+import com.qvtu.mallshopping.dto.CategoryCreateRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,7 +33,7 @@ public class CategoryController {
                 "name=%s, page=%d, size=%d, parentId=%s",
                 name, page, size, parentId));
 
-            List<Category> categories;
+            List<CategoryResponseDTO> categories;
             long total;
 
             if (parentId != null) {
@@ -58,5 +60,27 @@ public class CategoryController {
         }
     }
 
-    
+    @PostMapping
+    public ResponseEntity<CategoryResponseDTO> createCategory(@RequestBody CategoryCreateRequest request) {
+        try {
+            System.out.println("\n=== 开始创建分类 ===");
+            System.out.println("请求数据: " + request);
+
+            // 基本验证
+            if (request.getName() == null || request.getName().trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            Category category = categoryService.createCategory(request);
+            CategoryResponseDTO response = categoryService.convertToDTO(category);
+            
+            System.out.println("分类创建成功: " + response);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            System.err.println("创建分类失败: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 } 
