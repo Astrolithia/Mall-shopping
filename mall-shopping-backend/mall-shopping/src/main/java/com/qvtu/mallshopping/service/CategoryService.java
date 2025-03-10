@@ -141,4 +141,63 @@ public class CategoryService {
     public Page<Category> searchCategories(String name, Pageable pageable) {
         return categoryRepository.findByNameContaining(name, pageable);
     }
+
+    @Transactional
+    public Category updateCategory(Long id, CategoryCreateRequest request) {
+        Category category = getCategory(id);
+        
+        // 如果handle改变了，检查新handle是否已存在
+        if (request.getHandle() != null && !request.getHandle().equals(category.getHandle()) 
+                && categoryRepository.existsByHandle(request.getHandle())) {
+            throw new RuntimeException("分类Handle已存在");
+        }
+
+        // 更新基本信息
+        if (request.getName() != null) {
+            category.setName(request.getName());
+        }
+        if (request.getHandle() != null) {
+            category.setHandle(request.getHandle());
+        }
+        if (request.getDescription() != null) {
+            category.setDescription(request.getDescription());
+        }
+        if (request.getIsInternal() != null) {
+            category.setIsInternal(request.getIsInternal());
+        }
+        if (request.getIsActive() != null) {
+            category.setIsActive(request.getIsActive());
+        }
+        if (request.getRank() != null) {
+            category.setRank(request.getRank());
+        }
+        if (request.getMetadata() != null) {
+            category.setMetadata(request.getMetadata());
+        }
+
+        // 更新父分类
+        if (request.getParentCategoryId() != null) {
+            if (!request.getParentCategoryId().equals(category.getParentCategoryId())) {
+                Category parentCategory = categoryRepository.findById(request.getParentCategoryId())
+                        .orElseThrow(() -> new RuntimeException("父分类不存在"));
+                category.setParentCategory(parentCategory);
+            }
+        } else {
+            category.setParentCategory(null);
+        }
+
+        return categoryRepository.save(category);
+    }
+
+    @Transactional
+    public void deleteCategory(Long id) {
+        Category category = getCategory(id);
+        
+        // 检查是否有子分类
+        if (category.getChildren() != null && !category.getChildren().isEmpty()) {
+            throw new RuntimeException("无法删除有子分类的分类");
+        }
+        
+        categoryRepository.delete(category);
+    }
 }

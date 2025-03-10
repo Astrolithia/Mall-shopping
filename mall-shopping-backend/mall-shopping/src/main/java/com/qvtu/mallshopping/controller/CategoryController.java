@@ -194,4 +194,101 @@ public class CategoryController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> updateCategory(
+            @PathVariable Long id,
+            @RequestBody CategoryCreateRequest request) {
+        try {
+            Category category = categoryService.updateCategory(id, request);
+            
+            // 转换为前端期望的格式
+            Map<String, Object> formatted = new HashMap<>();
+            formatted.put("id", category.getId());
+            formatted.put("name", category.getName());
+            formatted.put("handle", category.getHandle());
+            formatted.put("description", category.getDescription());
+            formatted.put("is_internal", category.getIsInternal());
+            formatted.put("is_active", category.getIsActive());
+            formatted.put("rank", category.getRank());
+            formatted.put("parent_category_id", category.getParentCategoryId());
+            formatted.put("created_at", category.getCreatedAt());
+            formatted.put("updated_at", category.getUpdatedAt());
+            formatted.put("deleted_at", null);
+            
+            // 处理父分类
+            if (category.getParentCategory() != null) {
+                Map<String, Object> parentCategory = new HashMap<>();
+                parentCategory.put("id", category.getParentCategory().getId());
+                parentCategory.put("name", category.getParentCategory().getName());
+                parentCategory.put("handle", category.getParentCategory().getHandle());
+                parentCategory.put("description", category.getParentCategory().getDescription());
+                parentCategory.put("is_internal", category.getParentCategory().getIsInternal());
+                parentCategory.put("is_active", category.getParentCategory().getIsActive());
+                parentCategory.put("rank", category.getParentCategory().getRank());
+                parentCategory.put("created_at", category.getParentCategory().getCreatedAt());
+                parentCategory.put("updated_at", category.getParentCategory().getUpdatedAt());
+                parentCategory.put("deleted_at", null);
+                formatted.put("parent_category", parentCategory);
+            } else {
+                formatted.put("parent_category", null);
+            }
+            
+            // 处理子分类
+            formatted.put("category_children", category.getChildren() == null ? 
+                new ArrayList<>() : 
+                category.getChildren().stream()
+                    .map(child -> {
+                        Map<String, Object> childMap = new HashMap<>();
+                        childMap.put("id", child.getId());
+                        childMap.put("name", child.getName());
+                        childMap.put("handle", child.getHandle());
+                        childMap.put("description", child.getDescription());
+                        childMap.put("is_internal", child.getIsInternal());
+                        childMap.put("is_active", child.getIsActive());
+                        childMap.put("rank", child.getRank());
+                        childMap.put("created_at", child.getCreatedAt());
+                        childMap.put("updated_at", child.getUpdatedAt());
+                        childMap.put("deleted_at", null);
+                        return childMap;
+                    })
+                    .collect(Collectors.toList()));
+
+            // 构造最终响应
+            Map<String, Object> response = new HashMap<>();
+            response.put("product_category", formatted);
+
+            return ResponseEntity.ok(response);
+
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            System.err.println("更新分类失败: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
+        try {
+            // 根据 Medusa 工作流，先检查分类是否存在
+            Category category = categoryService.getCategory(id);
+            
+            // 检查是否有子分类
+            if (category.getChildren() != null && !category.getChildren().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            
+            // 执行删除操作
+            categoryService.deleteCategory(id);
+            
+            return ResponseEntity.ok().build();
+            
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            System.err.println("删除分类失败: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 } 
