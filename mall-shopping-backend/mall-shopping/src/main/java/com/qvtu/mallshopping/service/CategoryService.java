@@ -6,8 +6,11 @@ import com.qvtu.mallshopping.model.Category;
 import com.qvtu.mallshopping.repository.CategoryRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,11 +18,8 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class CategoryService {
-    private final CategoryRepository categoryRepository;
-
-    public CategoryService(CategoryRepository categoryRepository) {
-        this.categoryRepository = categoryRepository;
-    }
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     public List<CategoryResponseDTO> listCategories(String name, int page, int size) {
         // 确保分页参数合理
@@ -52,6 +52,14 @@ public class CategoryService {
     }
 
     public CategoryResponseDTO convertToDTO(Category category) {
+        return convertToDTO(category, 1); // 默认只获取一层子分类
+    }
+
+    private CategoryResponseDTO convertToDTO(Category category, int depth) {
+        if (category == null || depth < 0) {
+            return null;
+        }
+
         CategoryResponseDTO dto = new CategoryResponseDTO();
         dto.setId(category.getId());
         dto.setName(category.getName());
@@ -65,11 +73,13 @@ public class CategoryService {
         dto.setUpdated_at(category.getUpdatedAt());
         dto.setMetadata(category.getMetadata());
         
-        // 转换子分类
-        if (category.getChildren() != null && !category.getChildren().isEmpty()) {
+        // 只在需要时转换子分类，并限制递归深度
+        if (depth > 0 && category.getChildren() != null && !category.getChildren().isEmpty()) {
             dto.setChildren(category.getChildren().stream()
-                .map(this::convertToDTO)
+                .map(child -> convertToDTO(child, depth - 1))
                 .collect(Collectors.toList()));
+        } else {
+            dto.setChildren(null);
         }
         
         return dto;
@@ -112,5 +122,23 @@ public class CategoryService {
         }
 
         return categoryRepository.save(category);
+    }
+
+    public Category getCategory(Long id) {
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("分类不存在: " + id));
+    }
+
+    public Page<Category> getTopLevelCategories(Pageable pageable) {
+        return categoryRepository.findByParentCategoryIsNull(pageable);
+    }
+
+    public Page<Category> getCategoriesByParent(Long parentId, Pageable pageable) {
+        Category parentCategory = getCategory(parentId);
+        return categoryRepository.findByParentCategory(parentCategory, pageable);
+    }
+
+    public Page<Category> searchCategories(String name, Pageable pageable) {
+        return categoryRepository.findByNameContaining(name, pageable);
     }
 }
