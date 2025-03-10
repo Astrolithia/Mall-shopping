@@ -32,4 +32,37 @@ export interface UpdateRequest {
   description?: string;
   status?: string;
   metadata?: Record<string, any>;
+}
+
+export type Category = {
+  id: number
+  name: string
+  handle: string
+  description: string | null
+  is_internal: boolean
+  is_active: boolean
+  rank: number
+  parent_category_id: number | null
+  created_at: string
+  updated_at: string
+  metadata: Record<string, any>
+  children?: Category[]
+}
+
+export type CategoryCreateRequest = {
+  name: string
+  handle?: string
+  description?: string
+  is_internal?: boolean
+  is_active?: boolean
+  rank?: number
+  parent_category_id?: number
+  metadata?: Record<string, any>
+}
+
+export type CategoryListResponse = {
+  categories: Category[]
+  count: number
+  offset: number
+  limit: number
 } 
