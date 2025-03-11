@@ -4,13 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b1ac2843-4f97-4d53-b3b3-2029f58c811a" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/controller/CategoryController.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/controller/CategoryController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/exception/ResourceNotFoundException.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/exception/ResourceNotFoundException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/service/CategoryService.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/service/CategoryService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../my-shopping/src/api/admin/product-categories/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../my-shopping/src/api/admin/product-categories/route.ts" afterDir="false" />
-    </list>
+    <list default="true" id="b1ac2843-4f97-4d53-b3b3-2029f58c811a" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -104,7 +98,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1741141492913</updated>
-      <workItem from="1741141493910" duration="43095000" />
+      <workItem from="1741141493910" duration="43444000" />
     </task>
     <servers />
   </component>

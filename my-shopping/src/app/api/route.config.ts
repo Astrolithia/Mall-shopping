@@ -14,6 +14,10 @@ const config: NextConfig = {
         ]
       },
       {
+        source: '/admin/product-categories/:id',
+        destination: '/api/admin/product-categories/:id',
+      },
+      {
         source: '/app/categories/:id/edit',
         destination: '/api/admin/product-categories/:id/edit',
       },
