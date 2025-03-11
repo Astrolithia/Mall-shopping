@@ -4,6 +4,7 @@ import com.qvtu.mallshopping.dto.InventoryCreateRequest;
 import com.qvtu.mallshopping.dto.InventoryResponseDTO;
 import com.qvtu.mallshopping.dto.LocationLevelDTO;
 import com.qvtu.mallshopping.dto.LocationLevelBatchRequestDTO;
+import com.qvtu.mallshopping.dto.UpdateInventoryItemDTO;
 import com.qvtu.mallshopping.service.InventoryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -67,6 +68,22 @@ public class InventoryController {
         try {
             Map<String, Object> result = inventoryService.getInventoryItem(id);
             return ResponseEntity.ok(result);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("message", "Inventory item not found"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> updateInventoryItem(
+            @PathVariable String id,
+            @RequestBody UpdateInventoryItemDTO updateData) {
+        try {
+            Map<String, Object> result = inventoryService.updateInventoryItem(id, updateData);
+            return ResponseEntity.ok(Collections.singletonMap("inventory_item", result));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Collections.singletonMap("message", "Inventory item not found"));

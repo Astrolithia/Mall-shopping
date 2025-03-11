@@ -4,6 +4,7 @@ import com.qvtu.mallshopping.dto.InventoryCreateRequest;
 import com.qvtu.mallshopping.dto.InventoryResponseDTO;
 import com.qvtu.mallshopping.dto.LocationLevelDTO;
 import com.qvtu.mallshopping.dto.LocationResponseDTO;
+import com.qvtu.mallshopping.dto.UpdateInventoryItemDTO;
 import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 import com.qvtu.mallshopping.model.Inventory;
 import com.qvtu.mallshopping.model.Location;
@@ -202,6 +203,38 @@ public class InventoryService {
             locationLevels.add(locationLevel);
             result.put("location_levels", locationLevels);
         }
+
+        return result;
+    }
+
+    @Transactional
+    public Map<String, Object> updateInventoryItem(String id, UpdateInventoryItemDTO updateData) {
+        // 查找库存项目
+        Inventory inventory = inventoryRepository.findById(Long.parseLong(id))
+            .orElseThrow(() -> new ResourceNotFoundException("Inventory item not found"));
+
+        // 更新字段
+        if (updateData.getSku() != null) {
+            inventory.setSku(updateData.getSku());
+        }
+        
+        // 更新元数据
+        if (updateData.getMetadata() != null) {
+            Map<String, Object> currentMetadata = inventory.getMetadata();
+            if (currentMetadata == null) {
+                currentMetadata = new HashMap<>();
+            }
+            currentMetadata.putAll(updateData.getMetadata());
+            inventory.setMetadata(currentMetadata);
+        }
+
+        // 保存更新
+        inventory = inventoryRepository.save(inventory);
+
+        // 构造简化的响应
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", inventory.getId().toString());
+        result.put("requires_shipping", true);
 
         return result;
     }

@@ -57,6 +57,40 @@ const config: NextConfig = {
       {
         source: '/app/inventory/:id',
         destination: '/api/admin/inventory-items/:id',
+      },
+      {
+        source: '/admin/inventory-items/:id/edit',
+        destination: '/api/admin/inventory-items/:id/edit',
+      },
+      {
+        source: '/app/inventory/:id/edit',
+        destination: '/api/admin/inventory-items/:id/edit',
+      },
+      {
+        source: '/admin/inventory-items/:id',
+        destination: '/api/admin/inventory-items/:id',
+      },
+      {
+        source: '/app/inventory/:id',
+        destination: '/api/admin/inventory-items/:id',
+      },
+      {
+        source: '/admin/inventory-items/:id/edit',
+        destination: '/api/admin/inventory-items/:id/edit',
+      },
+      {
+        source: '/app/inventory/:id/edit',
+        destination: '/api/admin/inventory-items/:id/edit',
+      },
+      {
+        source: '/admin/inventory-items/:id',
+        destination: '/api/admin/inventory-items/:id/edit',
+        has: [
+          {
+            type: 'method',
+            key: 'POST'
+          }
+        ]
       }
     ]
   },
