@@ -5,9 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b1ac2843-4f97-4d53-b3b3-2029f58c811a" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/dto/InventoryResponseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/dto/InventoryResponseDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/controller/InventoryController.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/controller/InventoryController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/service/InventoryService.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/service/InventoryService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../my-shopping/src/app/api/route.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../my-shopping/src/app/api/route.config.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/resources/application.properties" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -102,7 +103,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1741141492913</updated>
-      <workItem from="1741141493910" duration="45602000" />
+      <workItem from="1741141493910" duration="46511000" />
     </task>
     <servers />
   </component>

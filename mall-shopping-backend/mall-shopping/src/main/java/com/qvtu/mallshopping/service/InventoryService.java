@@ -2,22 +2,26 @@ package com.qvtu.mallshopping.service;
 
 import com.qvtu.mallshopping.dto.InventoryCreateRequest;
 import com.qvtu.mallshopping.dto.InventoryResponseDTO;
+import com.qvtu.mallshopping.dto.LocationLevelDTO;
 import com.qvtu.mallshopping.dto.LocationResponseDTO;
 import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 import com.qvtu.mallshopping.model.Inventory;
 import com.qvtu.mallshopping.model.Location;
 import com.qvtu.mallshopping.repository.InventoryRepository;
 import com.qvtu.mallshopping.repository.LocationRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class InventoryService {
     private final InventoryRepository inventoryRepository;
@@ -118,5 +122,50 @@ public class InventoryService {
         response.put("limit", limit != null ? limit : 10);
         
         return response;
+    }
+
+    @Transactional
+    public List<Map<String, Object>> updateLocationLevels(List<LocationLevelDTO> locationLevels) {
+        List<Map<String, Object>> results = new ArrayList<>();
+        
+        for (LocationLevelDTO level : locationLevels) {
+            try {
+                // 查找库存项目
+                Inventory inventory = inventoryRepository.findById(Long.parseLong(level.getInventoryItemId()))
+                    .orElseThrow(() -> new ResourceNotFoundException("Inventory item not found"));
+                
+                // 查找位置
+                Location location = locationRepository.findById(level.getLocationId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Location not found"));
+                
+                // 更新库存数量
+                inventory.setQuantity(level.getStockedQuantity());
+                inventory.setLocation(location);
+                
+                // 保存更新
+                inventory = inventoryRepository.save(inventory);
+                
+                // 构造响应
+                Map<String, Object> result = new HashMap<>();
+                result.put("id", inventory.getId().toString());
+                result.put("inventory_item_id", inventory.getId().toString());
+                result.put("location_id", location.getId());
+                result.put("stocked_quantity", inventory.getQuantity());
+                result.put("incoming_quantity", level.getIncomingQuantity());
+                result.put("available_quantity", inventory.getQuantity());
+                result.put("created_at", inventory.getCreatedAt());
+                result.put("updated_at", inventory.getUpdatedAt());
+                result.put("deleted_at", inventory.getDeletedAt());
+                result.put("metadata", inventory.getMetadata());
+                
+                results.add(result);
+            } catch (Exception e) {
+                // 使用注入的 log 变量记录错误
+                log.error("Error updating location level for inventory item {}: {}", 
+                    level.getInventoryItemId(), e.getMessage());
+            }
+        }
+        
+        return results;
     }
 } 
