@@ -1,8 +1,11 @@
 package com.qvtu.mallshopping.model;
 
+import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.Type;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Data
 @Entity
@@ -27,6 +30,10 @@ public class Inventory {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id")
     private Location location; // 库存位置
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> metadata; // 元数据
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

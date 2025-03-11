@@ -86,20 +86,33 @@ public class InventoryService {
         // 获取分页数据
         Page<Inventory> inventoryPage = inventoryRepository.findAll(pageRequest);
         
-        // 转换为简化的 DTO 格式
-        List<Map<String, Object>> inventoryItems = inventoryPage.getContent()
+        List<Map<String, Object>> items = inventoryPage.getContent()
             .stream()
             .map(inventory -> {
                 Map<String, Object> item = new HashMap<>();
                 item.put("id", inventory.getId().toString());
-                item.put("requires_shipping", true);
+                item.put("sku", inventory.getSku());
+                item.put("quantity", inventory.getQuantity());
+                item.put("allowBackorder", inventory.getAllowBackorder());
+                item.put("manageInventory", inventory.getManageInventory());
+                item.put("metadata", inventory.getMetadata() != null ? inventory.getMetadata() : new HashMap<>());
+                item.put("createdAt", inventory.getCreatedAt());
+                item.put("updatedAt", inventory.getUpdatedAt());
+                
+                if (inventory.getLocation() != null) {
+                    Map<String, Object> location = new HashMap<>();
+                    location.put("id", inventory.getLocation().getId());
+                    location.put("name", inventory.getLocation().getName());
+                    item.put("location", location);
+                }
+                
                 return item;
             })
             .collect(Collectors.toList());
         
         // 构造符合 Medusa 格式的响应数据
         Map<String, Object> response = new HashMap<>();
-        response.put("inventory_items", inventoryItems);
+        response.put("inventory_items", items);
         response.put("count", inventoryPage.getTotalElements());
         response.put("offset", offset != null ? offset : 0);
         response.put("limit", limit != null ? limit : 10);

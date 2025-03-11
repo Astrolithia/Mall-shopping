@@ -2,6 +2,7 @@ package com.qvtu.mallshopping.dto;
 
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Data
 public class InventoryResponseDTO {
@@ -15,4 +16,5 @@ public class InventoryResponseDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
+    private Map<String, Object> metadata;
 } 

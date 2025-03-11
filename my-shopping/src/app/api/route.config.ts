@@ -35,6 +35,20 @@ const config: NextConfig = {
             value: '(?!.*product-categories).*'
           }
         ]
+      },
+      {
+        source: '/admin/inventory-items',
+        destination: '/api/admin/inventory-items',
+        has: [
+          {
+            type: 'query',
+            key: 'offset'
+          }
+        ]
+      },
+      {
+        source: '/app/inventory',
+        destination: '/api/admin/inventory-items',
       }
     ]
   },
