@@ -5,11 +5,12 @@ import java.time.LocalDateTime;
 
 @Data
 public class InventoryResponseDTO {
-    private Long id;
+    private String id;
     private String sku;
     private Integer quantity;
     private Boolean allowBackorder;
     private Boolean manageInventory;
+    private Boolean requiresShipping;
     private LocationResponseDTO location;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

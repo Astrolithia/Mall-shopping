@@ -1,44 +1,67 @@
 package com.qvtu.mallshopping.service;
 
+import com.qvtu.mallshopping.dto.InventoryCreateRequest;
 import com.qvtu.mallshopping.dto.InventoryResponseDTO;
 import com.qvtu.mallshopping.dto.LocationResponseDTO;
+import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 import com.qvtu.mallshopping.model.Inventory;
+import com.qvtu.mallshopping.model.Location;
 import com.qvtu.mallshopping.repository.InventoryRepository;
+import com.qvtu.mallshopping.repository.LocationRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class InventoryService {
     private final InventoryRepository inventoryRepository;
+    private final LocationRepository locationRepository;
 
-    public InventoryService(InventoryRepository inventoryRepository) {
+    public InventoryService(InventoryRepository inventoryRepository, LocationRepository locationRepository) {
         this.inventoryRepository = inventoryRepository;
+        this.locationRepository = locationRepository;
     }
 
-    public Page<InventoryResponseDTO> listInventoryItems(Integer offset, Integer limit) {
-        // 创建分页请求
-        PageRequest pageRequest = PageRequest.of(offset / limit, limit);
-        
-        // 获取分页数据
-        Page<Inventory> inventoryPage = inventoryRepository.findAll(pageRequest);
-        
-        // 转换为 DTO
-        return inventoryPage.map(this::convertToDTO);
+    @Transactional
+    public InventoryResponseDTO createInventory(InventoryCreateRequest request) {
+        // 查找库存位置
+        Location location = locationRepository.findById(request.getLocationId())
+                .orElseThrow(() -> new ResourceNotFoundException("Location not found"));
+
+        // 创建新的库存记录
+        Inventory inventory = new Inventory();
+        inventory.setSku(request.getSku());
+        inventory.setQuantity(request.getQuantity());
+        inventory.setAllowBackorder(request.getAllowBackorder());
+        inventory.setManageInventory(request.getManageInventory());
+        inventory.setLocation(location);
+
+        // 保存库存记录
+        inventory = inventoryRepository.save(inventory);
+
+        // 转换为响应DTO
+        return convertToDTO(inventory);
     }
 
     private InventoryResponseDTO convertToDTO(Inventory inventory) {
         InventoryResponseDTO dto = new InventoryResponseDTO();
-        dto.setId(inventory.getId());
+        dto.setId(inventory.getId().toString());
         dto.setSku(inventory.getSku());
         dto.setQuantity(inventory.getQuantity());
         dto.setAllowBackorder(inventory.getAllowBackorder());
         dto.setManageInventory(inventory.getManageInventory());
+        dto.setRequiresShipping(true);
         dto.setCreatedAt(inventory.getCreatedAt());
         dto.setUpdatedAt(inventory.getUpdatedAt());
         dto.setDeletedAt(inventory.getDeletedAt());
-        
-        // 如果有位置信息,转换位置信息
+
+        // 转换位置信息
         if (inventory.getLocation() != null) {
             LocationResponseDTO locationDTO = new LocationResponseDTO();
             locationDTO.setId(inventory.getLocation().getId());
@@ -49,7 +72,38 @@ public class InventoryService {
             locationDTO.setDeletedAt(inventory.getLocation().getDeletedAt());
             dto.setLocation(locationDTO);
         }
-        
+
         return dto;
+    }
+
+    public Map<String, Object> listInventories(Integer offset, Integer limit) {
+        // 创建分页请求
+        PageRequest pageRequest = PageRequest.of(
+            offset != null ? offset : 0,
+            limit != null ? limit : 10
+        );
+        
+        // 获取分页数据
+        Page<Inventory> inventoryPage = inventoryRepository.findAll(pageRequest);
+        
+        // 转换为简化的 DTO 格式
+        List<Map<String, Object>> inventoryItems = inventoryPage.getContent()
+            .stream()
+            .map(inventory -> {
+                Map<String, Object> item = new HashMap<>();
+                item.put("id", inventory.getId().toString());
+                item.put("requires_shipping", true);
+                return item;
+            })
+            .collect(Collectors.toList());
+        
+        // 构造符合 Medusa 格式的响应数据
+        Map<String, Object> response = new HashMap<>();
+        response.put("inventory_items", inventoryItems);
+        response.put("count", inventoryPage.getTotalElements());
+        response.put("offset", offset != null ? offset : 0);
+        response.put("limit", limit != null ? limit : 10);
+        
+        return response;
     }
 } 

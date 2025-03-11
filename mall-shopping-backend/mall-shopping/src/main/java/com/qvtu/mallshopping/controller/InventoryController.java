@@ -1,12 +1,12 @@
 package com.qvtu.mallshopping.controller;
 
+import com.qvtu.mallshopping.dto.InventoryCreateRequest;
 import com.qvtu.mallshopping.dto.InventoryResponseDTO;
 import com.qvtu.mallshopping.service.InventoryService;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
+import org.springframework.http.HttpStatus;
+import java.util.Collections;
 import java.util.Map;
 
 @RestController
@@ -19,24 +19,25 @@ public class InventoryController {
     }
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> listInventoryItems(
-            @RequestParam(defaultValue = "0") Integer offset,
-            @RequestParam(defaultValue = "10") Integer limit
-    ) {
+    public ResponseEntity<Map<String, Object>> listInventories(
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(required = false) Integer limit) {
         try {
-            Page<InventoryResponseDTO> page = inventoryService.listInventoryItems(offset, limit);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("inventory_items", page.getContent());
-            response.put("count", page.getTotalElements());
-            response.put("offset", offset);
-            response.put("limit", limit);
-
-            return ResponseEntity.ok(response);
+            Map<String, Object> result = inventoryService.listInventories(offset, limit);
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("message", "获取库存列表失败: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(errorResponse);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping
+    public ResponseEntity<InventoryResponseDTO> createInventory(@RequestBody InventoryCreateRequest request) {
+        try {
+            InventoryResponseDTO inventory = inventoryService.createInventory(request);
+            return ResponseEntity.ok(inventory);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 } 
