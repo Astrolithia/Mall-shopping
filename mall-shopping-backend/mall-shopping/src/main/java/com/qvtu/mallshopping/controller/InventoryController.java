@@ -16,6 +16,9 @@ import com.qvtu.mallshopping.model.Inventory;
 import com.qvtu.mallshopping.repository.LocationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.qvtu.mallshopping.repository.InventoryRepository;
+import com.qvtu.mallshopping.model.InventoryLevel;
+import com.qvtu.mallshopping.repository.InventoryLevelRepository;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/inventories")
@@ -23,16 +26,19 @@ public class InventoryController {
     private final InventoryService inventoryService;
     private final LocationRepository locationRepository;
     private final InventoryRepository inventoryRepository;
+    private final InventoryLevelRepository inventoryLevelRepository;
 
     @Autowired
     public InventoryController(
         InventoryService inventoryService,
         LocationRepository locationRepository,
-        InventoryRepository inventoryRepository
+        InventoryRepository inventoryRepository,
+        InventoryLevelRepository inventoryLevelRepository
     ) {
         this.inventoryService = inventoryService;
         this.locationRepository = locationRepository;
         this.inventoryRepository = inventoryRepository;
+        this.inventoryLevelRepository = inventoryLevelRepository;
     }
 
     @GetMapping
@@ -161,15 +167,34 @@ public class InventoryController {
     ) {
         try {
             // 首先检查库存项目是否存在
-            inventoryService.getInventoryItem(id);
+            Inventory inventory = inventoryRepository.findById(Long.parseLong(id))
+                .orElseThrow(() -> new ResourceNotFoundException("Inventory item not found"));
             
             // 生成测试数据
             InventoryDataGenerator generator = new InventoryDataGenerator();
             List<Map<String, Object>> locationLevels = generator.generateLocationLevels(count);
             
+            List<InventoryLevel> savedLevels = new ArrayList<>();
+            
+            // 为每个生成的数据创建库存水平记录
+            for (Map<String, Object> level : locationLevels) {
+                InventoryLevel inventoryLevel = new InventoryLevel();
+                inventoryLevel.setInventory(inventory);
+                inventoryLevel.setLocation(inventory.getLocation());
+                inventoryLevel.setStockedQuantity((Integer) level.get("stocked_quantity"));
+                inventoryLevel.setReservedQuantity((Integer) level.get("reserved_quantity"));
+                inventoryLevel.setIncomingQuantity((Integer) level.get("incoming_quantity"));
+                inventoryLevel.setMetadata((Map<String, Object>) level.get("metadata"));
+                
+                savedLevels.add(inventoryLevelRepository.save(inventoryLevel));
+            }
+            
+            // 返回生成的数据
             Map<String, Object> response = new HashMap<>();
-            response.put("location_levels", locationLevels);
-            response.put("count", locationLevels.size());
+            response.put("location_levels", savedLevels.stream()
+                .map(this::convertLevelToMap)
+                .collect(Collectors.toList()));
+            response.put("count", savedLevels.size());
             
             return ResponseEntity.ok(response);
         } catch (ResourceNotFoundException e) {
@@ -179,6 +204,21 @@ public class InventoryController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Collections.singletonMap("message", e.getMessage()));
         }
+    }
+
+    private Map<String, Object> convertLevelToMap(InventoryLevel level) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", level.getId());
+        result.put("location_id", level.getLocation().getId());
+        result.put("stocked_quantity", level.getStockedQuantity());
+        result.put("reserved_quantity", level.getReservedQuantity());
+        result.put("available_quantity", level.getStockedQuantity() - level.getReservedQuantity());
+        result.put("incoming_quantity", level.getIncomingQuantity());
+        result.put("created_at", level.getCreatedAt());
+        result.put("updated_at", level.getUpdatedAt());
+        result.put("deleted_at", level.getDeletedAt());
+        result.put("metadata", level.getMetadata());
+        return result;
     }
 
     private InventoryResponseDTO convertToDTO(Inventory inventory) {

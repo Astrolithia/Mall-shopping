@@ -7,7 +7,9 @@ import com.qvtu.mallshopping.dto.LocationResponseDTO;
 import com.qvtu.mallshopping.dto.UpdateInventoryItemDTO;
 import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 import com.qvtu.mallshopping.model.Inventory;
+import com.qvtu.mallshopping.model.InventoryLevel;
 import com.qvtu.mallshopping.model.Location;
+import com.qvtu.mallshopping.repository.InventoryLevelRepository;
 import com.qvtu.mallshopping.repository.InventoryRepository;
 import com.qvtu.mallshopping.repository.LocationRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -29,11 +31,13 @@ import java.util.stream.Collectors;
 public class InventoryService {
     private final InventoryRepository inventoryRepository;
     private final LocationRepository locationRepository;
+    private final InventoryLevelRepository inventoryLevelRepository;
 
     @Autowired
-    public InventoryService(InventoryRepository inventoryRepository, LocationRepository locationRepository) {
+    public InventoryService(InventoryRepository inventoryRepository, LocationRepository locationRepository, InventoryLevelRepository inventoryLevelRepository) {
         this.inventoryRepository = inventoryRepository;
         this.locationRepository = locationRepository;
+        this.inventoryLevelRepository = inventoryLevelRepository;
     }
 
     @Transactional
@@ -294,28 +298,33 @@ public class InventoryService {
         );
 
         // 获取库存水平列表
-        List<Map<String, Object>> locationLevels = new ArrayList<>();
-        if (inventory.getLocation() != null) {
-            Map<String, Object> locationLevel = new HashMap<>();
-            locationLevel.put("location_id", inventory.getLocation().getId());
-            locationLevel.put("stocked_quantity", inventory.getQuantity());
-            locationLevel.put("reserved_quantity", 0); // 如果有预留数量，这里需要修改
-            locationLevel.put("available_quantity", inventory.getQuantity());
-            locationLevel.put("incoming_quantity", 0); // 如果有进货数量，这里需要修改
-            locationLevel.put("created_at", inventory.getCreatedAt());
-            locationLevel.put("updated_at", inventory.getUpdatedAt());
-            locationLevel.put("deleted_at", inventory.getDeletedAt());
-            locationLevel.put("metadata", inventory.getMetadata() != null ? inventory.getMetadata() : new HashMap<>());
-            locationLevels.add(locationLevel);
-        }
+        Page<InventoryLevel> levels = inventoryLevelRepository
+            .findByInventoryIdAndDeletedAtIsNull(inventory.getId(), pageRequest);
 
-        // 构造符合 Medusa 格式的响应数据
+        // 构造响应数据
         Map<String, Object> response = new HashMap<>();
-        response.put("location_levels", locationLevels);
-        response.put("count", locationLevels.size());
+        response.put("location_levels", levels.getContent().stream()
+            .map(this::convertLevelToMap)
+            .collect(Collectors.toList()));
+        response.put("count", levels.getTotalElements());
         response.put("offset", offset != null ? offset : 0);
         response.put("limit", limit != null ? limit : 10);
 
         return response;
+    }
+
+    private Map<String, Object> convertLevelToMap(InventoryLevel level) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", level.getId());
+        result.put("location_id", level.getLocation().getId());
+        result.put("stocked_quantity", level.getStockedQuantity());
+        result.put("reserved_quantity", level.getReservedQuantity());
+        result.put("available_quantity", level.getStockedQuantity() - level.getReservedQuantity());
+        result.put("incoming_quantity", level.getIncomingQuantity());
+        result.put("created_at", level.getCreatedAt());
+        result.put("updated_at", level.getUpdatedAt());
+        result.put("deleted_at", level.getDeletedAt());
+        result.put("metadata", level.getMetadata());
+        return result;
     }
 } 
