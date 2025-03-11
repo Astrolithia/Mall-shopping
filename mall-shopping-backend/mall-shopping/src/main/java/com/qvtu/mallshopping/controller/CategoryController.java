@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,6 +24,10 @@ public class CategoryController {
 
     public CategoryController(CategoryService categoryService) {
         this.categoryService = categoryService;
+    }
+
+    private CategoryResponseDTO convertToDTO(Category category) {
+        return categoryService.convertToDTO(category);
     }
 
     @GetMapping("/{id}")
@@ -43,56 +48,23 @@ public class CategoryController {
             formatted.put("created_at", category.getCreatedAt());
             formatted.put("updated_at", category.getUpdatedAt());
             formatted.put("deleted_at", null);
+            formatted.put("metadata", category.getMetadata());
             
-            // 处理父分类
-            if (category.getParentCategory() != null) {
-                Map<String, Object> parentCategory = new HashMap<>();
-                parentCategory.put("id", category.getParentCategory().getId());
-                parentCategory.put("name", category.getParentCategory().getName());
-                parentCategory.put("handle", category.getParentCategory().getHandle());
-                parentCategory.put("description", category.getParentCategory().getDescription());
-                parentCategory.put("is_internal", category.getParentCategory().getIsInternal());
-                parentCategory.put("is_active", category.getParentCategory().getIsActive());
-                parentCategory.put("rank", category.getParentCategory().getRank());
-                parentCategory.put("created_at", category.getParentCategory().getCreatedAt());
-                parentCategory.put("updated_at", category.getParentCategory().getUpdatedAt());
-                parentCategory.put("deleted_at", null);
-                formatted.put("parent_category", parentCategory);
-            } else {
-                formatted.put("parent_category", null);
-            }
-            
-            // 处理子分类
-            formatted.put("category_children", category.getChildren() == null ? 
-                new ArrayList<>() : 
-                category.getChildren().stream()
-                    .map(child -> {
-                        Map<String, Object> childMap = new HashMap<>();
-                        childMap.put("id", child.getId());
-                        childMap.put("name", child.getName());
-                        childMap.put("handle", child.getHandle());
-                        childMap.put("description", child.getDescription());
-                        childMap.put("is_internal", child.getIsInternal());
-                        childMap.put("is_active", child.getIsActive());
-                        childMap.put("rank", child.getRank());
-                        childMap.put("created_at", child.getCreatedAt());
-                        childMap.put("updated_at", child.getUpdatedAt());
-                        childMap.put("deleted_at", null);
-                        return childMap;
-                    })
-                    .collect(Collectors.toList()));
-
             // 构造最终响应
             Map<String, Object> response = new HashMap<>();
             response.put("product_category", formatted);
 
             return ResponseEntity.ok(response);
-
+            
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            System.err.println("获取分类失败: " + e.getMessage());
-            return ResponseEntity.internalServerError().build();
+            // 构造符合Medusa错误格式的响应
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Product category with id: " + id + " was not found");
+            errorResponse.put("type", "not_found");
+            errorResponse.put("code", "UNKNOWN");
+            
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                               .body(errorResponse);
         }
     }
 
@@ -285,7 +257,7 @@ public class CategoryController {
             return ResponseEntity.ok().build();
             
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity.notFound().build();
+            throw ResourceNotFoundException.notFound("Category", id.toString());
         } catch (Exception e) {
             System.err.println("删除分类失败: " + e.getMessage());
             return ResponseEntity.internalServerError().build();

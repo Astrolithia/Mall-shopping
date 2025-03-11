@@ -126,7 +126,7 @@ public class CategoryService {
 
     public Category getCategory(Long id) {
         return categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("分类不存在: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Product category", "id", id.toString()));
     }
 
     public Page<Category> getTopLevelCategories(Pageable pageable) {
@@ -192,12 +192,6 @@ public class CategoryService {
     @Transactional
     public void deleteCategory(Long id) {
         Category category = getCategory(id);
-        
-        // 检查是否有子分类
-        if (category.getChildren() != null && !category.getChildren().isEmpty()) {
-            throw new RuntimeException("无法删除有子分类的分类");
-        }
-        
         categoryRepository.delete(category);
     }
 }

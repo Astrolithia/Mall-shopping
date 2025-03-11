@@ -4,20 +4,33 @@ const config: NextConfig = {
   async rewrites() {
     return [
       {
+        source: '/admin/product-categories/:id',
+        destination: '/api/admin/product-categories/:id',
+        has: [
+          {
+            type: 'query',
+            key: 'fields',
+          }
+        ]
+      },
+      {
+        source: '/app/categories/:id/edit',
+        destination: '/api/admin/product-categories/:id/edit',
+      },
+      {
         source: '/admin/product-categories',
-        destination: '/api/admin/product-categories',
+        destination: '/api/admin/product-categories/create',
       },
       {
-        source: '/admin/product-categories/:path*',
-        destination: '/api/admin/product-categories/:path*',
-      },
-      {
-        source: '/admin/product-categories/category',
-        destination: '/api/admin/product-categories',
-      },
-      {
-        source: '/store/product-categories/:path*',
-        destination: '/api/admin/product-categories/:path*',
+        source: '/admin/:path*',
+        destination: '/api/not-found',
+        has: [
+          {
+            type: 'query',
+            key: 'fields',
+            value: '(?!.*product-categories).*'
+          }
+        ]
       }
     ]
   },
