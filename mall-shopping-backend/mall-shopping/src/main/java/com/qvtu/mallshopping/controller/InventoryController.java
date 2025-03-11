@@ -136,6 +136,51 @@ public class InventoryController {
         }
     }
 
+    @GetMapping("/{id}/location-levels")
+    public ResponseEntity<Map<String, Object>> getInventoryItemLocationLevels(
+        @PathVariable String id,
+        @RequestParam(required = false) Integer offset,
+        @RequestParam(required = false) Integer limit
+    ) {
+        try {
+            Map<String, Object> result = inventoryService.getInventoryItemLocationLevels(id, offset, limit);
+            return ResponseEntity.ok(result);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Collections.singletonMap("message", "Inventory item not found"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Collections.singletonMap("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/location-levels/generate")
+    public ResponseEntity<Map<String, Object>> generateLocationLevelsTestData(
+        @PathVariable String id,
+        @RequestParam(defaultValue = "1") Integer count
+    ) {
+        try {
+            // 首先检查库存项目是否存在
+            inventoryService.getInventoryItem(id);
+            
+            // 生成测试数据
+            InventoryDataGenerator generator = new InventoryDataGenerator();
+            List<Map<String, Object>> locationLevels = generator.generateLocationLevels(count);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("location_levels", locationLevels);
+            response.put("count", locationLevels.size());
+            
+            return ResponseEntity.ok(response);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Collections.singletonMap("message", "Inventory item not found"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Collections.singletonMap("message", e.getMessage()));
+        }
+    }
+
     private InventoryResponseDTO convertToDTO(Inventory inventory) {
         InventoryResponseDTO dto = new InventoryResponseDTO();
         dto.setId(inventory.getId().toString());

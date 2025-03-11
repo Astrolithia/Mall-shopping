@@ -281,4 +281,41 @@ public class InventoryService {
         // 保存更新
         inventoryRepository.save(inventory);
     }
+
+    public Map<String, Object> getInventoryItemLocationLevels(String id, Integer offset, Integer limit) {
+        // 查找库存项目
+        Inventory inventory = inventoryRepository.findByIdAndDeletedAtIsNull(Long.parseLong(id))
+            .orElseThrow(() -> new ResourceNotFoundException("Inventory item not found"));
+
+        // 创建分页请求
+        PageRequest pageRequest = PageRequest.of(
+            offset != null ? offset : 0,
+            limit != null ? limit : 10
+        );
+
+        // 获取库存水平列表
+        List<Map<String, Object>> locationLevels = new ArrayList<>();
+        if (inventory.getLocation() != null) {
+            Map<String, Object> locationLevel = new HashMap<>();
+            locationLevel.put("location_id", inventory.getLocation().getId());
+            locationLevel.put("stocked_quantity", inventory.getQuantity());
+            locationLevel.put("reserved_quantity", 0); // 如果有预留数量，这里需要修改
+            locationLevel.put("available_quantity", inventory.getQuantity());
+            locationLevel.put("incoming_quantity", 0); // 如果有进货数量，这里需要修改
+            locationLevel.put("created_at", inventory.getCreatedAt());
+            locationLevel.put("updated_at", inventory.getUpdatedAt());
+            locationLevel.put("deleted_at", inventory.getDeletedAt());
+            locationLevel.put("metadata", inventory.getMetadata() != null ? inventory.getMetadata() : new HashMap<>());
+            locationLevels.add(locationLevel);
+        }
+
+        // 构造符合 Medusa 格式的响应数据
+        Map<String, Object> response = new HashMap<>();
+        response.put("location_levels", locationLevels);
+        response.put("count", locationLevels.size());
+        response.put("offset", offset != null ? offset : 0);
+        response.put("limit", limit != null ? limit : 10);
+
+        return response;
+    }
 } 
