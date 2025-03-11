@@ -24,6 +24,7 @@ public class InventoryController {
     private final LocationRepository locationRepository;
     private final InventoryRepository inventoryRepository;
 
+    @Autowired
     public InventoryController(
         InventoryService inventoryService,
         LocationRepository locationRepository,

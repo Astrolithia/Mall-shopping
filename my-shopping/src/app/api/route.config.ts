@@ -47,44 +47,12 @@ const config: NextConfig = {
         ]
       },
       {
-        source: '/app/inventory',
-        destination: '/api/admin/inventory-items',
+        source: '/admin/inventory-items/:id',
+        destination: '/api/admin/inventory-items/:id'
       },
       {
         source: '/admin/inventory-items/:id',
         destination: '/api/admin/inventory-items/:id',
-      },
-      {
-        source: '/app/inventory/:id',
-        destination: '/api/admin/inventory-items/:id',
-      },
-      {
-        source: '/admin/inventory-items/:id/edit',
-        destination: '/api/admin/inventory-items/:id/edit',
-      },
-      {
-        source: '/app/inventory/:id/edit',
-        destination: '/api/admin/inventory-items/:id/edit',
-      },
-      {
-        source: '/admin/inventory-items/:id',
-        destination: '/api/admin/inventory-items/:id',
-      },
-      {
-        source: '/app/inventory/:id',
-        destination: '/api/admin/inventory-items/:id',
-      },
-      {
-        source: '/admin/inventory-items/:id/edit',
-        destination: '/api/admin/inventory-items/:id/edit',
-      },
-      {
-        source: '/app/inventory/:id/edit',
-        destination: '/api/admin/inventory-items/:id/edit',
-      },
-      {
-        source: '/admin/inventory-items/:id',
-        destination: '/api/admin/inventory-items/:id/edit',
         has: [
           {
             type: 'method',
@@ -93,13 +61,41 @@ const config: NextConfig = {
         ]
       },
       {
+        source: '/admin/inventory-items/:id',
+        destination: '/api/admin/inventory-items/:id',
+        has: [
+          {
+            type: 'method',
+            key: 'DELETE'
+          }
+        ]
+      },
+      {
+        source: '/app/inventory',
+        destination: '/api/admin/inventory-items',
+        has: [
+          {
+            type: 'query',
+            key: 'offset'
+          }
+        ]
+      },
+      {
+        source: '/admin/inventory-items/:id/edit',
+        destination: '/api/admin/inventory-items/:id/edit',
+      },
+      {
+        source: '/app/inventory/:id/edit',
+        destination: '/api/admin/inventory-items/:id/edit',
+      },
+      {
         source: '/admin/inventory-items/:id/attributes',
         destination: '/api/admin/inventory-items/:id/attributes',
       },
       {
         source: '/app/inventory/:id/attributes',
         destination: '/api/admin/inventory-items/:id/attributes',
-      }
+      },
     ]
   },
 }

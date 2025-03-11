@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ public class InventoryService {
     private final InventoryRepository inventoryRepository;
     private final LocationRepository locationRepository;
 
+    @Autowired
     public InventoryService(InventoryRepository inventoryRepository, LocationRepository locationRepository) {
         this.inventoryRepository = inventoryRepository;
         this.locationRepository = locationRepository;
@@ -89,8 +91,8 @@ public class InventoryService {
             limit != null ? limit : 10
         );
         
-        // 获取分页数据
-        Page<Inventory> inventoryPage = inventoryRepository.findAll(pageRequest);
+        // 只获取未删除的记录
+        Page<Inventory> inventoryPage = inventoryRepository.findByDeletedAtIsNull(pageRequest);
         
         List<Map<String, Object>> items = inventoryPage.getContent()
             .stream()
@@ -179,7 +181,7 @@ public class InventoryService {
     }
 
     public Map<String, Object> getInventoryItem(String id) {
-        Inventory inventory = inventoryRepository.findById(Long.parseLong(id))
+        Inventory inventory = inventoryRepository.findByIdAndDeletedAtIsNull(Long.parseLong(id))
             .orElseThrow(() -> new ResourceNotFoundException("Inventory item not found"));
 
         Map<String, Object> result = new HashMap<>();
