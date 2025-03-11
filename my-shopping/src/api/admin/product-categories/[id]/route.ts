@@ -174,7 +174,7 @@ export async function DELETE(
     console.log('\n=== 开始删除分类 ===')
     console.log('分类ID:', id)
 
-    const response = await fetch(`http://localhost:8080/admin/product-categories/${id}`, {
+    const response = await fetch(`http://localhost:8080/api/categories/${id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'
@@ -182,9 +182,17 @@ export async function DELETE(
     })
 
     if (!response.ok) {
+      if (response.status === 404) {
+        return res.status(404).json({
+          message: `Product category with id: ${id} was not found`,
+          type: "not_found",
+          code: "UNKNOWN"
+        })
+      }
       throw new Error('删除分类失败')
     }
 
+    // 返回符合 Medusa Admin UI 期望的格式
     res.status(200).json({
       id,
       object: 'product_category',
@@ -193,7 +201,9 @@ export async function DELETE(
   } catch (error) {
     console.error('删除分类失败:', error)
     res.status(500).json({
-      message: error.message || '删除分类失败'
+      message: error.message || '删除分类失败',
+      type: "error",
+      code: "UNKNOWN"
     })
   }
 }
