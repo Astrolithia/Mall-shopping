@@ -1,10 +1,6 @@
 package com.qvtu.mallshopping.controller;
 
-import com.qvtu.mallshopping.dto.InventoryCreateRequest;
-import com.qvtu.mallshopping.dto.InventoryResponseDTO;
-import com.qvtu.mallshopping.dto.LocationLevelDTO;
-import com.qvtu.mallshopping.dto.LocationLevelBatchRequestDTO;
-import com.qvtu.mallshopping.dto.UpdateInventoryItemDTO;
+import com.qvtu.mallshopping.dto.*;
 import com.qvtu.mallshopping.service.InventoryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,14 +10,28 @@ import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
 import com.qvtu.mallshopping.exception.ResourceNotFoundException;
+import java.util.ArrayList;
+import com.qvtu.mallshopping.util.InventoryDataGenerator;
+import com.qvtu.mallshopping.model.Inventory;
+import com.qvtu.mallshopping.repository.LocationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.qvtu.mallshopping.repository.InventoryRepository;
 
 @RestController
 @RequestMapping("/api/inventories")
 public class InventoryController {
     private final InventoryService inventoryService;
+    private final LocationRepository locationRepository;
+    private final InventoryRepository inventoryRepository;
 
-    public InventoryController(InventoryService inventoryService) {
+    public InventoryController(
+        InventoryService inventoryService,
+        LocationRepository locationRepository,
+        InventoryRepository inventoryRepository
+    ) {
         this.inventoryService = inventoryService;
+        this.locationRepository = locationRepository;
+        this.inventoryRepository = inventoryRepository;
     }
 
     @GetMapping
@@ -91,5 +101,63 @@ public class InventoryController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonMap("message", e.getMessage()));
         }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteInventoryItem(@PathVariable String id) {
+        try {
+            inventoryService.deleteInventoryItem(id);
+            return ResponseEntity.ok().build();
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/generate-test-data")
+    public ResponseEntity<Map<String, Object>> generateTestData(
+            @RequestParam(defaultValue = "5") Integer count) {
+        try {
+            InventoryDataGenerator generator = new InventoryDataGenerator();
+            List<Inventory> inventories = generator.generateInventories(count);
+            
+            List<InventoryResponseDTO> results = new ArrayList<>();
+            for (Inventory inventory : inventories) {
+                inventory.setLocation(locationRepository.findById(1L).orElseThrow());
+                results.add(convertToDTO(inventoryRepository.save(inventory)));
+            }
+            
+            return ResponseEntity.ok(Collections.singletonMap("generated_items", results));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("message", e.getMessage()));
+        }
+    }
+
+    private InventoryResponseDTO convertToDTO(Inventory inventory) {
+        InventoryResponseDTO dto = new InventoryResponseDTO();
+        dto.setId(inventory.getId().toString());
+        dto.setSku(inventory.getSku());
+        dto.setQuantity(inventory.getQuantity());
+        dto.setAllowBackorder(inventory.getAllowBackorder());
+        dto.setManageInventory(inventory.getManageInventory());
+        dto.setRequiresShipping(true);
+        dto.setCreatedAt(inventory.getCreatedAt());
+        dto.setUpdatedAt(inventory.getUpdatedAt());
+        dto.setDeletedAt(inventory.getDeletedAt());
+
+        if (inventory.getLocation() != null) {
+            LocationResponseDTO locationDTO = new LocationResponseDTO();
+            locationDTO.setId(inventory.getLocation().getId());
+            locationDTO.setName(inventory.getLocation().getName());
+            locationDTO.setAddress(inventory.getLocation().getAddress());
+            locationDTO.setCreatedAt(inventory.getLocation().getCreatedAt());
+            locationDTO.setUpdatedAt(inventory.getLocation().getUpdatedAt());
+            locationDTO.setDeletedAt(inventory.getLocation().getDeletedAt());
+            dto.setLocation(locationDTO);
+        }
+
+        return dto;
     }
 } 

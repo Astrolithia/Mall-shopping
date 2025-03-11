@@ -7,9 +7,6 @@ export async function GET(
   try {
     const { id } = req.params
 
-    console.log('\n=== 开始获取库存项目详情 ===')
-    console.log('库存项目ID:', id)
-
     const response = await fetch(
       `http://localhost:8080/api/inventories/${id}`,
       {
@@ -25,27 +22,21 @@ export async function GET(
     }
 
     const data = await response.json()
-    console.log('获取到的库存项目详情:', data)
-
-    // 转换为 Medusa Admin UI 期望的格式
+    
+    // 返回包含所有属性的响应
     res.json({
       inventory_item: {
         id: data.id,
         sku: data.sku,
-        origin_country: data.origin_country,
-        hs_code: data.hs_code,
-        mid_code: data.mid_code,
-        material: data.material,
-        weight: data.weight,
-        length: data.length,
         height: data.height,
         width: data.width,
-        requires_shipping: data.requires_shipping,
-        metadata: data.metadata || {},
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        deleted_at: data.deleted_at,
-        location_levels: data.location_levels || []
+        length: data.length,
+        weight: data.weight,
+        mid_code: data.mid_code,
+        hs_code: data.hs_code,
+        origin_country: data.origin_country,
+        requires_shipping: true,
+        metadata: data.metadata || {}
       }
     })
   } catch (error) {
@@ -68,6 +59,9 @@ export async function POST(
     console.log('库存项目ID:', id)
     console.log('更新数据:', updateData)
 
+    // 从路径中判断是否是属性更新
+    const isAttributesUpdate = req.url.includes('/attributes')
+
     const response = await fetch(
       `http://localhost:8080/api/inventories/${id}`,
       {
@@ -76,8 +70,14 @@ export async function POST(
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          sku: updateData.sku,
-          metadata: updateData.metadata
+          height: updateData.height,
+          width: updateData.width,
+          length: updateData.length,
+          weight: updateData.weight,
+          mid_code: updateData.mid_code,
+          hs_code: updateData.hs_code,
+          origin_country: updateData.origin_country,
+          requires_shipping: updateData.requires_shipping
         })
       }
     )
@@ -87,11 +87,11 @@ export async function POST(
     }
 
     const data = await response.json()
-    console.log('更新后的库存项目:', data)
 
+    // 返回简化的响应
     res.json({
       inventory_item: {
-        id: data.inventory_item.id,
+        id: data.id,
         requires_shipping: true
       }
     })

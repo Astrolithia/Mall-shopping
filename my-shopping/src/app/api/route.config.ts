@@ -91,6 +91,14 @@ const config: NextConfig = {
             key: 'POST'
           }
         ]
+      },
+      {
+        source: '/admin/inventory-items/:id/attributes',
+        destination: '/api/admin/inventory-items/:id/attributes',
+      },
+      {
+        source: '/app/inventory/:id/attributes',
+        destination: '/api/admin/inventory-items/:id/attributes',
       }
     ]
   },

@@ -44,6 +44,27 @@ public class Inventory {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(name = "height")
+    private Double height;
+
+    @Column(name = "width")
+    private Double width;
+
+    @Column(name = "length")
+    private Double length;
+
+    @Column(name = "weight")
+    private Double weight;
+
+    @Column(name = "mid_code")
+    private String midCode;
+
+    @Column(name = "hs_code")
+    private String hsCode;
+
+    @Column(name = "origin_country")
+    private String originCountry;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

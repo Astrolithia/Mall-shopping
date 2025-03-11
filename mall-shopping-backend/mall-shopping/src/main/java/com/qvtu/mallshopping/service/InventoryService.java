@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -97,6 +98,13 @@ public class InventoryService {
                 Map<String, Object> item = new HashMap<>();
                 item.put("id", inventory.getId().toString());
                 item.put("sku", inventory.getSku());
+                item.put("height", inventory.getHeight());
+                item.put("width", inventory.getWidth());
+                item.put("length", inventory.getLength());
+                item.put("weight", inventory.getWeight());
+                item.put("mid_code", inventory.getMidCode());
+                item.put("hs_code", inventory.getHsCode());
+                item.put("origin_country", inventory.getOriginCountry());
                 item.put("quantity", inventory.getQuantity());
                 item.put("allowBackorder", inventory.getAllowBackorder());
                 item.put("manageInventory", inventory.getManageInventory());
@@ -177,14 +185,13 @@ public class InventoryService {
         Map<String, Object> result = new HashMap<>();
         result.put("id", inventory.getId().toString());
         result.put("sku", inventory.getSku());
-        result.put("origin_country", null);
-        result.put("hs_code", null);
-        result.put("mid_code", null);
-        result.put("material", null);
-        result.put("weight", null);
-        result.put("length", null);
-        result.put("height", null);
-        result.put("width", null);
+        result.put("height", inventory.getHeight());
+        result.put("width", inventory.getWidth());
+        result.put("length", inventory.getLength());
+        result.put("weight", inventory.getWeight());
+        result.put("mid_code", inventory.getMidCode());
+        result.put("hs_code", inventory.getHsCode());
+        result.put("origin_country", inventory.getOriginCountry());
         result.put("requires_shipping", true);
         result.put("metadata", inventory.getMetadata() != null ? inventory.getMetadata() : new HashMap<>());
         result.put("created_at", inventory.getCreatedAt());
@@ -217,6 +224,27 @@ public class InventoryService {
         if (updateData.getSku() != null) {
             inventory.setSku(updateData.getSku());
         }
+        if (updateData.getHeight() != null) {
+            inventory.setHeight(updateData.getHeight());
+        }
+        if (updateData.getWidth() != null) {
+            inventory.setWidth(updateData.getWidth());
+        }
+        if (updateData.getLength() != null) {
+            inventory.setLength(updateData.getLength());
+        }
+        if (updateData.getWeight() != null) {
+            inventory.setWeight(updateData.getWeight());
+        }
+        if (updateData.getMidCode() != null) {
+            inventory.setMidCode(updateData.getMidCode());
+        }
+        if (updateData.getHsCode() != null) {
+            inventory.setHsCode(updateData.getHsCode());
+        }
+        if (updateData.getOriginCountry() != null) {
+            inventory.setOriginCountry(updateData.getOriginCountry());
+        }
         
         // 更新元数据
         if (updateData.getMetadata() != null) {
@@ -237,5 +265,18 @@ public class InventoryService {
         result.put("requires_shipping", true);
 
         return result;
+    }
+
+    @Transactional
+    public void deleteInventoryItem(String id) {
+        // 查找库存项目
+        Inventory inventory = inventoryRepository.findById(Long.parseLong(id))
+            .orElseThrow(() -> new ResourceNotFoundException("Inventory item not found"));
+
+        // 软删除 - 设置删除时间
+        inventory.setDeletedAt(LocalDateTime.now());
+        
+        // 保存更新
+        inventoryRepository.save(inventory);
     }
 } 
