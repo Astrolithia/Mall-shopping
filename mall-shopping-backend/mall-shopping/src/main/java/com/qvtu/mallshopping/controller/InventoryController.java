@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
+import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 
 @RestController
 @RequestMapping("/api/inventories")
@@ -55,6 +56,20 @@ public class InventoryController {
             response.put("inventory_items", results);
             
             return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> getInventoryItem(@PathVariable String id) {
+        try {
+            Map<String, Object> result = inventoryService.getInventoryItem(id);
+            return ResponseEntity.ok(result);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("message", "Inventory item not found"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonMap("message", e.getMessage()));

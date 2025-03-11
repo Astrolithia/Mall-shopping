@@ -49,6 +49,14 @@ const config: NextConfig = {
       {
         source: '/app/inventory',
         destination: '/api/admin/inventory-items',
+      },
+      {
+        source: '/admin/inventory-items/:id',
+        destination: '/api/admin/inventory-items/:id',
+      },
+      {
+        source: '/app/inventory/:id',
+        destination: '/api/admin/inventory-items/:id',
       }
     ]
   },

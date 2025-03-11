@@ -168,4 +168,41 @@ public class InventoryService {
         
         return results;
     }
+
+    public Map<String, Object> getInventoryItem(String id) {
+        Inventory inventory = inventoryRepository.findById(Long.parseLong(id))
+            .orElseThrow(() -> new ResourceNotFoundException("Inventory item not found"));
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", inventory.getId().toString());
+        result.put("sku", inventory.getSku());
+        result.put("origin_country", null);
+        result.put("hs_code", null);
+        result.put("mid_code", null);
+        result.put("material", null);
+        result.put("weight", null);
+        result.put("length", null);
+        result.put("height", null);
+        result.put("width", null);
+        result.put("requires_shipping", true);
+        result.put("metadata", inventory.getMetadata() != null ? inventory.getMetadata() : new HashMap<>());
+        result.put("created_at", inventory.getCreatedAt());
+        result.put("updated_at", inventory.getUpdatedAt());
+        result.put("deleted_at", inventory.getDeletedAt());
+
+        // 添加库存水平信息
+        if (inventory.getLocation() != null) {
+            List<Map<String, Object>> locationLevels = new ArrayList<>();
+            Map<String, Object> locationLevel = new HashMap<>();
+            locationLevel.put("location_id", inventory.getLocation().getId());
+            locationLevel.put("stocked_quantity", inventory.getQuantity());
+            locationLevel.put("reserved_quantity", 0); // 如果有预留数量，这里需要修改
+            locationLevel.put("available_quantity", inventory.getQuantity());
+            locationLevel.put("incoming_quantity", 0); // 如果有进货数量，这里需要修改
+            locationLevels.add(locationLevel);
+            result.put("location_levels", locationLevels);
+        }
+
+        return result;
+    }
 } 
