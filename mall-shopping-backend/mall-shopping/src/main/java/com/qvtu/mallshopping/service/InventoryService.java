@@ -5,6 +5,7 @@ import com.qvtu.mallshopping.dto.InventoryResponseDTO;
 import com.qvtu.mallshopping.dto.LocationLevelDTO;
 import com.qvtu.mallshopping.dto.LocationResponseDTO;
 import com.qvtu.mallshopping.dto.UpdateInventoryItemDTO;
+import com.qvtu.mallshopping.dto.CreateLocationLevelDTO;
 import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 import com.qvtu.mallshopping.model.Inventory;
 import com.qvtu.mallshopping.model.InventoryLevel;
@@ -326,5 +327,44 @@ public class InventoryService {
         result.put("deleted_at", level.getDeletedAt());
         result.put("metadata", level.getMetadata());
         return result;
+    }
+
+    @Transactional
+    public Map<String, Object> createInventoryLevel(String id, CreateLocationLevelDTO request) {
+        log.info("Creating inventory level - ID: {}, Request: {}", id, request);
+        
+        // 查找库存项目
+        Inventory inventory = inventoryRepository.findByIdAndDeletedAtIsNull(Long.parseLong(id))
+            .orElseThrow(() -> new ResourceNotFoundException("Inventory item not found"));
+        
+        log.info("Found inventory: {}", inventory);
+        
+        // 查找位置
+        log.info("Looking for location with ID: {}", request.getLocationId());
+        Location location = locationRepository.findById(Long.parseLong(request.getLocationId()))
+            .orElseThrow(() -> new ResourceNotFoundException("Location not found"));
+        
+        log.info("Found location: {}", location);
+
+        // 创建新的库存水平
+        InventoryLevel level = new InventoryLevel();
+        level.setInventory(inventory);
+        level.setLocation(location);
+        level.setStockedQuantity(request.getStockedQuantity() != null ? request.getStockedQuantity() : 0);
+        level.setReservedQuantity(0);
+        level.setIncomingQuantity(request.getIncomingQuantity() != null ? request.getIncomingQuantity() : 0);
+        level.setMetadata(request.getMetadata());
+
+        // 保存库存水平
+        level = inventoryLevelRepository.save(level);
+        log.info("Saved inventory level: {}", level);
+
+        // 更新库存项目的总库存数量
+        Integer oldQuantity = inventory.getQuantity();
+        inventory.setQuantity(oldQuantity + level.getStockedQuantity());
+        inventoryRepository.save(inventory);
+        log.info("Updated inventory quantity from {} to {}", oldQuantity, inventory.getQuantity());
+
+        return convertLevelToMap(level);
     }
 } 

@@ -19,6 +19,8 @@ import com.qvtu.mallshopping.repository.InventoryRepository;
 import com.qvtu.mallshopping.model.InventoryLevel;
 import com.qvtu.mallshopping.repository.InventoryLevelRepository;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/inventories")
@@ -27,6 +29,7 @@ public class InventoryController {
     private final LocationRepository locationRepository;
     private final InventoryRepository inventoryRepository;
     private final InventoryLevelRepository inventoryLevelRepository;
+    private static final Logger log = LoggerFactory.getLogger(InventoryController.class);
 
     @Autowired
     public InventoryController(
@@ -201,6 +204,32 @@ public class InventoryController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Collections.singletonMap("message", "Inventory item not found"));
         } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Collections.singletonMap("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/location-levels")
+    public ResponseEntity<Map<String, Object>> createInventoryLevel(
+        @PathVariable String id,
+        @RequestBody CreateLocationLevelDTO request
+    ) {
+        try {
+            log.info("Received request to create inventory level - ID: {}, Request: {}", id, request);
+            
+            // 验证请求数据
+            request.validate();
+            
+            Map<String, Object> result = inventoryService.createInventoryLevel(id, request);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                .body(Collections.singletonMap("message", e.getMessage()));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Collections.singletonMap("message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error creating inventory level", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Collections.singletonMap("message", e.getMessage()));
         }

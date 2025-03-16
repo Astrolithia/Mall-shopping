@@ -104,12 +104,25 @@ export async function POST(
     console.log('\n=== 开始创建库存项目 ===')
     console.log('创建数据:', createData)
 
+    // 转换请求数据格式以匹配后端期望
+    const requestData = {
+      sku: createData.sku,
+      quantity: 0, // 设置初始库存为0
+      allowBackorder: false,
+      manageInventory: true,
+      locationId: 1, // 使用默认位置ID
+      metadata: {
+        title: createData.title,
+        requires_shipping: createData.requires_shipping
+      }
+    }
+
     const response = await fetch('http://localhost:8080/api/inventories', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(createData)
+      body: JSON.stringify(requestData)
     })
 
     if (!response.ok) {
@@ -123,7 +136,10 @@ export async function POST(
     res.json({
       inventory_item: {
         id: data.id,
-        requires_shipping: true
+        sku: data.sku,
+        title: createData.title,
+        requires_shipping: createData.requires_shipping,
+        metadata: data.metadata || {}
       }
     })
   } catch (error) {

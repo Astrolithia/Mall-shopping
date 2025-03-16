@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "../../../mall-shopping-backend"
+		},
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../my-shopping-storefront"
+		}
+	],
+	"settings": {
+		"java.compile.nullAnalysis.mode": "disabled"
+	}
+}

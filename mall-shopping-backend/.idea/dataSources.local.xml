@@ -24,5 +24,13 @@
         </introspection-scope>
       </schema-mapping>
     </data-source>
+    <data-source name="mall@localhost" uuid="9f73bba5-f213-4ad9-a6d6-3f3b66291d87">
+      <database-info product="PostgreSQL" version="14.17 (Homebrew)" jdbc-version="4.2" driver-name="PostgreSQL JDBC Driver" driver-version="42.7.3" dbms="POSTGRES" exact-version="14.17" exact-driver-version="42.7">
+        <identifier-quote-string>&quot;</identifier-quote-string>
+      </database-info>
+      <case-sensitivity plain-identifiers="lower" quoted-identifiers="exact" />
+      <user-name>astrolithia</user-name>
+      <schema-mapping />
+    </data-source>
   </component>
 </project>
