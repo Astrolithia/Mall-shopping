@@ -6,6 +6,15 @@ export async function GET(
 ) {
   try {
     const { id } = req.params
+    console.log('获取库存项目详情, ID:', id)
+
+    if (!id) {
+      return res.status(404).json({
+        type: "not_found",
+        message: "Inventory item not found",
+        code: "inventory_item.not_found"
+      })
+    }
 
     const response = await fetch(
       `http://localhost:8080/api/inventories/${id}`,
@@ -18,31 +27,58 @@ export async function GET(
     )
 
     if (!response.ok) {
-      throw new Error('获取库存项目详情失败')
+      if (response.status === 404) {
+        return res.status(404).json({
+          type: "not_found",
+          message: "Inventory item not found",
+          code: "inventory_item.not_found"
+        })
+      }
+      throw new Error(`获取库存项目失败: ${response.status}`)
     }
 
     const data = await response.json()
-    
-    // 返回包含所有属性的响应
+    console.log('获取到的库存项目数据:', data)
+
+    // 转换为 Medusa Admin UI 期望的格式
+    const formattedItem = {
+      id: data.id,
+      sku: data.sku,
+      title: `${data.sku} (${data.quantity} units)`,
+      thumbnail: null,
+      location_levels: [{
+        location_id: data.location?.id || 1,
+        stocked_quantity: data.quantity || 0,
+        available_quantity: data.quantity || 0,
+        reserved_quantity: 0
+      }],
+      requires_shipping: true,
+      material: data.metadata?.material || null,
+      weight: data.weight || null,
+      length: data.length || null,
+      height: data.height || null,
+      width: data.width || null,
+      origin_country: data.origin_country || null,
+      hs_code: data.hs_code || null,
+      mid_code: data.mid_code || null,
+      description: data.metadata?.description || null,
+      manage_inventory: data.manageInventory || true,
+      allow_backorder: data.allowBackorder || false,
+      metadata: data.metadata || {},
+      created_at: data.createdAt,
+      updated_at: data.updatedAt
+    }
+
     res.json({
-      inventory_item: {
-        id: data.id,
-        sku: data.sku,
-        height: data.height,
-        width: data.width,
-        length: data.length,
-        weight: data.weight,
-        mid_code: data.mid_code,
-        hs_code: data.hs_code,
-        origin_country: data.origin_country,
-        requires_shipping: true,
-        metadata: data.metadata || {}
-      }
+      inventory_item: formattedItem
     })
+
   } catch (error) {
     console.error('获取库存项目详情失败:', error)
-    res.status(500).json({
-      message: error.message || '获取库存项目详情失败'
+    res.status(404).json({
+      type: "not_found",
+      message: "Inventory item not found",
+      code: "inventory_item.not_found"
     })
   }
 }

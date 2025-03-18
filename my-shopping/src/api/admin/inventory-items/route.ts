@@ -5,20 +5,12 @@ export async function GET(
   res: MedusaResponse
 ) {
   try {
-    const offset = req.query.offset as string
-    const limit = req.query.limit as string
-
-    console.log('\n=== 开始获取库存列表 ===')
-    console.log('偏移量:', offset)
-    console.log('限制数:', limit)
+    const { offset = 0, limit = 10 } = req.query
+    const page = Math.floor(Number(offset) / Number(limit))
 
     const response = await fetch(
-      `http://localhost:8080/api/inventories?${new URLSearchParams({
-        offset: offset || '0',
-        limit: limit || '10'
-      })}`,
+      `http://localhost:8080/api/inventories?page=${page}&size=${limit}`,
       {
-        method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
@@ -33,59 +25,41 @@ export async function GET(
     console.log('获取到的库存数据:', data)
 
     // 转换为 Medusa Admin UI 期望的格式
+    const formattedItems = data.inventory_items.map(item => ({
+      id: item.id,
+      sku: item.sku,
+      title: `${item.sku} (${item.quantity} units)`, // 添加更多描述性信息
+      thumbnail: null,
+      location_levels: [{
+        location_id: item.location?.id || 1,
+        stocked_quantity: item.quantity || 0,
+        available_quantity: item.quantity || 0,
+        reserved_quantity: 0
+      }],
+      requires_shipping: true,
+      material: item.metadata?.material || null,
+      weight: item.weight || null,
+      length: item.length || null,
+      height: item.height || null,
+      width: item.width || null,
+      origin_country: item.origin_country || null,
+      hs_code: item.hs_code || null,
+      mid_code: item.mid_code || null,
+      description: item.metadata?.description || null,
+      manage_inventory: item.manageInventory || true,
+      allow_backorder: item.allowBackorder || false,
+      metadata: item.metadata || {},
+      created_at: item.createdAt,
+      updated_at: item.updatedAt
+    }))
+
     res.json({
-      inventory_items: data.inventory_items.map((item: any) => {
-        // 确保 item.sku 存在
-        if (!item.sku) {
-          return {
-            id: item.id,
-            sku: '',
-            title: '',
-            requires_shipping: true
-          }
-        }
-
-        // 从 SKU 解析尺码和颜色信息
-        const skuParts = item.sku.split('-')
-        const type = skuParts[0] || '' // SHIRT, SWEATPANTS 等
-        const size = skuParts[1] || '' // XL, S, M 等
-        const color = skuParts[2] || '' // WHITE, BLACK 等
-        
-        // 构建标题
-        const title = color ? `${size} / ${color}` : size
-
-        return {
-          id: item.id,
-          sku: item.sku,
-          title: title,
-          thumbnail: null,
-          location_levels: [{
-            location_id: item.location?.id,
-            stocked_quantity: item.quantity || 0,
-            available_quantity: item.quantity || 0,
-            reserved_quantity: 0
-          }],
-          requires_shipping: true,
-          material: null,
-          weight: null,
-          length: null,
-          height: null,
-          width: null,
-          origin_country: null,
-          hs_code: null,
-          mid_code: null,
-          description: null,
-          manage_inventory: item.manageInventory,
-          allow_backorder: item.allowBackorder,
-          metadata: item.metadata || {},
-          created_at: item.createdAt,
-          updated_at: item.updatedAt
-        }
-      }),
+      inventory_items: formattedItems,
       count: data.count,
-      offset: parseInt(offset || '0'),
-      limit: parseInt(limit || '10')
+      offset: Number(offset),
+      limit: Number(limit)
     })
+
   } catch (error) {
     console.error('获取库存列表失败:', error)
     res.status(500).json({

@@ -65,4 +65,24 @@ export type CategoryListResponse = {
   count: number
   offset: number
   limit: number
+}
+
+export interface ReservationRequest {
+  line_item_id: string
+  inventory_item_id: string
+  location_id: string
+  quantity: number
+  description?: string
+  external_id?: string
+  metadata?: Record<string, any>
+}
+
+export interface ReservationResponse {
+  id: string
+  line_item_id: string
+  location_id: string
+  quantity: number
+  external_id?: string
+  description?: string
+  inventory_item_id: string
 } 
