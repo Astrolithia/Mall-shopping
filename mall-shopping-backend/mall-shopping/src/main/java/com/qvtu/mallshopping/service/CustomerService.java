@@ -22,6 +22,7 @@ import com.qvtu.mallshopping.dto.CustomerUpdateRequest;
 import com.github.javafaker.Faker;
 import java.util.Locale;
 import java.time.LocalDate;
+import jakarta.persistence.EntityManager;
 
 @Service
 @Slf4j
@@ -32,8 +33,14 @@ public class CustomerService {
     @Autowired
     private AddressRepository addressRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
     public Map<String, Object> listCustomers(int page, int size) {
         log.info("获取客户列表, 页码: {}, 每页数量: {}", page, size);
+        
+        // 清除一级缓存
+        entityManager.clear();
         
         Pageable pageable = PageRequest.of(page, size);
         Page<Customer> customerPage = customerRepository.findAll(pageable);
@@ -95,49 +102,60 @@ public class CustomerService {
     }
 
     public Map<String, Object> createCustomer(CustomerCreateRequest request) {
-        log.info("开始创建客户");
+        log.info("开始创建客户, 请求数据: {}", request);
         
-        // 检查邮箱是否已存在
-        if (customerRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exists");
-        }
+        try {
+            // 检查邮箱是否已存在
+            if (customerRepository.findByEmail(request.getEmail()).isPresent()) {
+                throw new RuntimeException("Email already exists");
+            }
 
-        // 创建新客户
-        Customer customer = Customer.builder()
-            .email(request.getEmail())
-            .companyName(request.getCompanyName())
-            .firstName(request.getFirstName())
-            .lastName(request.getLastName())
-            .hasAccount(true)
-            .metadata(request.getMetadata())
-            .addresses(new ArrayList<>()) // 初始化为可变列表
-            .build();
-
-        customer = customerRepository.save(customer);
-        log.info("客户创建成功, ID: {}", customer.getId());
-
-        // 如果提供了电话号码,创建默认地址
-        if (request.getPhone() != null) {
-            Address address = Address.builder()
-                .customer(customer)
-                .phone(request.getPhone())
-                .isDefaultShipping(true)
-                .isDefaultBilling(true)
-                .metadata(new HashMap<>())
+            // 创建新客户
+            Customer customer = Customer.builder()
+                .email(request.getEmail())
+                .companyName(request.getCompanyName())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .hasAccount(true)
+                .metadata(request.getMetadata() != null ? request.getMetadata() : new HashMap<>())
+                .addresses(new ArrayList<>())
                 .build();
-            
-            address = addressRepository.save(address);
-            customer.getAddresses().add(address); // 使用 add 方法添加到列表
-            customer.setDefaultBillingAddressId(address.getId().toString());
-            customer.setDefaultShippingAddressId(address.getId().toString());
-            customer = customerRepository.save(customer);
-        }
 
-        // 格式化响应
-        Map<String, Object> response = new HashMap<>();
-        response.put("customer", formatCustomerResponse(customer));
-        
-        return response;
+            customer = customerRepository.save(customer);
+            log.info("客户基本信息创建成功, ID: {}", customer.getId());
+
+            // 如果提供了电话号码,创建默认地址
+            if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+                Address address = Address.builder()
+                    .customer(customer)
+                    .addressName("默认地址")
+                    .isDefaultShipping(true)
+                    .isDefaultBilling(true)
+                    .company(customer.getCompanyName())
+                    .firstName(customer.getFirstName())
+                    .lastName(customer.getLastName())
+                    .phone(request.getPhone())
+                    .metadata(new HashMap<>())
+                    .build();
+                
+                address = addressRepository.save(address);
+                log.info("客户默认地址创建成功, ID: {}", address.getId());
+
+                customer.getAddresses().add(address);
+                customer.setDefaultBillingAddressId(address.getId().toString());
+                customer.setDefaultShippingAddressId(address.getId().toString());
+                customer = customerRepository.save(customer);
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("customer", formatCustomerResponse(customer));
+            
+            log.info("客户创建完成, ID: {}", customer.getId());
+            return response;
+        } catch (Exception e) {
+            log.error("创建客户失败", e);
+            throw e;
+        }
     }
 
     public Map<String, Object> getCustomer(Long id) {
@@ -153,7 +171,7 @@ public class CustomerService {
     }
 
     public Map<String, Object> updateCustomer(Long id, CustomerUpdateRequest request) {
-        log.info("开始更新客户信息, ID: {}", id);
+        log.info("开始更新客户信息, ID: {}, 请求数据: {}", id, request);
         
         Customer customer = customerRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Customer not found"));
@@ -161,7 +179,9 @@ public class CustomerService {
         // 如果要更新邮箱，检查新邮箱是否已被使用
         if (request.getEmail() != null && !request.getEmail().equals(customer.getEmail())) {
             customerRepository.findByEmail(request.getEmail()).ifPresent(c -> {
-                throw new RuntimeException("Email already exists");
+                if (!c.getId().equals(id)) {  // 添加ID检查，允许更新自己的邮箱
+                    throw new RuntimeException("Email already exists");
+                }
             });
             customer.setEmail(request.getEmail());
         }
@@ -193,6 +213,11 @@ public class CustomerService {
                     .build());
 
             defaultAddress.setPhone(request.getPhone());
+            // 同步更新地址的其他信息
+            defaultAddress.setFirstName(customer.getFirstName());
+            defaultAddress.setLastName(customer.getLastName());
+            defaultAddress.setCompany(customer.getCompanyName());
+            
             defaultAddress = addressRepository.save(defaultAddress);
 
             if (!customer.getAddresses().contains(defaultAddress)) {

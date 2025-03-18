@@ -5,6 +5,7 @@ import com.qvtu.mallshopping.dto.CustomerUpdateRequest;
 import com.qvtu.mallshopping.service.CustomerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +23,7 @@ public class CustomerController {
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size
     ) {
-        log.info("收到获取客户列表请求");
+        log.info("收到获取客户列表请求, page: {}, size: {}", page, size);
         Map<String, Object> response = customerService.listCustomers(page, size);
         return ResponseEntity.ok(response);
     }
