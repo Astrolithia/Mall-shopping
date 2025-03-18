@@ -28,6 +28,7 @@ import com.qvtu.mallshopping.repository.CustomerGroupRepository;
 import com.qvtu.mallshopping.dto.CustomerGroupCreateRequest;
 import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 import com.qvtu.mallshopping.dto.CustomerGroupUpdateRequest;
+import java.util.Collections;
 
 @Service
 @Slf4j
@@ -659,5 +660,140 @@ public class CustomerService {
         
         log.info("测试客户群组数据生成完成");
         return response;
+    }
+
+    public Map<String, Object> addCustomersToGroup(Long groupId, List<String> customerIds) {
+        log.info("开始向客户群组添加客户, 群组ID: {}, 客户IDs: {}", groupId, customerIds);
+        
+        try {
+            // 查找客户群组
+            CustomerGroup group = customerGroupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer group not found"));
+            
+            List<Customer> addedCustomers = new ArrayList<>();
+            
+            // 添加客户到群组
+            for (String customerId : customerIds) {
+                try {
+                    Long id = Long.parseLong(customerId);
+                    Customer customer = customerRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException("Customer not found: " + id));
+                    
+                    // 检查客户是否已在群组中
+                    if (!group.getCustomers().contains(customer)) {
+                        group.getCustomers().add(customer);
+                        
+                        // 更新客户的群组列表
+                        if (customer.getCustomerGroups() == null) {
+                            customer.setCustomerGroups(new ArrayList<>());
+                        }
+                        if (!customer.getCustomerGroups().contains(group)) {
+                            customer.getCustomerGroups().add(group);
+                            customerRepository.save(customer);
+                        }
+                        
+                        addedCustomers.add(customer);
+                    }
+                } catch (NumberFormatException e) {
+                    log.warn("无效的客户ID格式: {}", customerId);
+                }
+            }
+            
+            // 保存更新后的群组
+            group = customerGroupRepository.save(group);
+            log.info("成功向客户群组添加 {} 个客户", addedCustomers.size());
+            
+            // 格式化响应
+            Map<String, Object> response = new HashMap<>();
+            response.put("customer_group", formatCustomerGroupResponse(group));
+            
+            return response;
+        } catch (ResourceNotFoundException e) {
+            log.error("客户群组不存在, ID: {}", groupId);
+            throw e;
+        } catch (Exception e) {
+            log.error("向客户群组添加客户失败, 群组ID: {}", groupId, e);
+            throw e;
+        }
+    }
+
+    public void removeCustomersFromGroup(Long groupId, List<String> customerIds) {
+        log.info("开始从客户群组移除客户, 群组ID: {}, 客户IDs: {}", groupId, customerIds);
+        
+        try {
+            // 查找客户群组
+            CustomerGroup group = customerGroupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer group not found"));
+            
+            int removedCount = 0;
+            
+            // 从群组中移除客户
+            for (String customerId : customerIds) {
+                try {
+                    Long id = Long.parseLong(customerId);
+                    Customer customer = customerRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException("Customer not found: " + id));
+                    
+                    // 从群组中移除客户
+                    if (group.getCustomers().remove(customer)) {
+                        removedCount++;
+                        
+                        // 从客户的群组列表中移除此群组
+                        if (customer.getCustomerGroups() != null) {
+                            customer.getCustomerGroups().remove(group);
+                            customerRepository.save(customer);
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    log.warn("无效的客户ID格式: {}", customerId);
+                }
+            }
+            
+            // 保存更新后的群组
+            customerGroupRepository.save(group);
+            log.info("成功从客户群组移除 {} 个客户", removedCount);
+        } catch (ResourceNotFoundException e) {
+            log.error("客户群组不存在, ID: {}", groupId);
+            throw e;
+        } catch (Exception e) {
+            log.error("从客户群组移除客户失败, 群组ID: {}", groupId, e);
+            throw e;
+        }
+    }
+
+    public Map<String, Object> deleteCustomerGroup(Long id) {
+        log.info("开始删除客户群组, ID: {}", id);
+        
+        try {
+            // 查找客户群组
+            CustomerGroup group = customerGroupRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer group not found"));
+            
+            // 从所有关联的客户中移除此群组
+            for (Customer customer : group.getCustomers()) {
+                if (customer.getCustomerGroups() != null) {
+                    customer.getCustomerGroups().remove(group);
+                    customerRepository.save(customer);
+                }
+            }
+            
+            // 删除客户群组
+            customerGroupRepository.delete(group);
+            log.info("客户群组删除成功, ID: {}", id);
+            
+            // 返回符合 Medusa API 规范的响应
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", id.toString());
+            response.put("object", "customer_group");
+            response.put("deleted", true);
+            
+            return response;
+        } catch (ResourceNotFoundException e) {
+            log.error("客户群组不存在, ID: {}", id);
+            throw e;
+        } catch (Exception e) {
+            log.error("删除客户群组失败, ID: {}", id, e);
+            throw e;
+        }
     }
 } 

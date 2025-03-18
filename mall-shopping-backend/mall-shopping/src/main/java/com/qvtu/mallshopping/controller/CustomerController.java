@@ -12,6 +12,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -143,6 +144,114 @@ public class CustomerController {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             log.error("更新客户群组失败", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/groups/{id}/customers")
+    public ResponseEntity<Map<String, Object>> addCustomersToGroup(
+        @PathVariable Long id,
+        @RequestBody Map<String, Object> requestBody
+    ) {
+        log.info("收到向客户群组添加客户请求, 群组ID: {}, 请求数据: {}", id, requestBody);
+        try {
+            // 检查请求体中是否包含 customer_ids
+            if (!requestBody.containsKey("customer_ids")) {
+                log.warn("请求中缺少 customer_ids 字段");
+                return ResponseEntity.badRequest().body(
+                    Collections.singletonMap("message", "必须提供要添加的客户ID列表")
+                );
+            }
+            
+            Object customerIdsObj = requestBody.get("customer_ids");
+            log.info("customer_ids 类型: {}, 值: {}", 
+                     customerIdsObj != null ? customerIdsObj.getClass().getName() : "null", 
+                     customerIdsObj);
+            
+            List<String> customerIds;
+            if (customerIdsObj instanceof List) {
+                customerIds = (List<String>) customerIdsObj;
+            } else {
+                log.warn("customer_ids 不是有效的列表");
+                return ResponseEntity.badRequest().body(
+                    Collections.singletonMap("message", "customer_ids 必须是一个列表")
+                );
+            }
+            
+            if (customerIds.isEmpty()) {
+                log.warn("customer_ids 列表为空");
+                return ResponseEntity.badRequest().body(
+                    Collections.singletonMap("message", "必须提供要添加的客户ID列表")
+                );
+            }
+            
+            Map<String, Object> response = customerService.addCustomersToGroup(id, customerIds);
+            return ResponseEntity.ok(response);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("向客户群组添加客户失败", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @DeleteMapping("/groups/{id}/customers")
+    public ResponseEntity<Map<String, Object>> removeCustomersFromGroup(
+        @PathVariable Long id,
+        @RequestBody Map<String, Object> requestBody
+    ) {
+        log.info("收到从客户群组移除客户请求, 群组ID: {}, 请求数据: {}", id, requestBody);
+        try {
+            // 检查请求体中是否包含 customer_ids
+            if (!requestBody.containsKey("customer_ids")) {
+                log.warn("请求中缺少 customer_ids 字段");
+                return ResponseEntity.badRequest().body(
+                    Collections.singletonMap("message", "必须提供要移除的客户ID列表")
+                );
+            }
+            
+            Object customerIdsObj = requestBody.get("customer_ids");
+            log.info("customer_ids 类型: {}, 值: {}", 
+                     customerIdsObj != null ? customerIdsObj.getClass().getName() : "null", 
+                     customerIdsObj);
+            
+            List<String> customerIds;
+            if (customerIdsObj instanceof List) {
+                customerIds = (List<String>) customerIdsObj;
+            } else {
+                log.warn("customer_ids 不是有效的列表");
+                return ResponseEntity.badRequest().body(
+                    Collections.singletonMap("message", "customer_ids 必须是一个列表")
+                );
+            }
+            
+            if (customerIds.isEmpty()) {
+                log.warn("customer_ids 列表为空");
+                return ResponseEntity.badRequest().body(
+                    Collections.singletonMap("message", "必须提供要移除的客户ID列表")
+                );
+            }
+            
+            customerService.removeCustomersFromGroup(id, customerIds);
+            return ResponseEntity.ok(Collections.emptyMap());
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("从客户群组移除客户失败", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @DeleteMapping("/groups/{id}")
+    public ResponseEntity<Map<String, Object>> deleteCustomerGroup(@PathVariable Long id) {
+        log.info("收到删除客户群组请求, ID: {}", id);
+        try {
+            Map<String, Object> response = customerService.deleteCustomerGroup(id);
+            return ResponseEntity.ok(response);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("删除客户群组失败", e);
             return ResponseEntity.internalServerError().build();
         }
     }
