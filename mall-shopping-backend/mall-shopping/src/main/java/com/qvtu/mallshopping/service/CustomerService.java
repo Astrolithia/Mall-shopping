@@ -23,6 +23,10 @@ import com.github.javafaker.Faker;
 import java.util.Locale;
 import java.time.LocalDate;
 import jakarta.persistence.EntityManager;
+import com.qvtu.mallshopping.model.CustomerGroup;
+import com.qvtu.mallshopping.repository.CustomerGroupRepository;
+import com.qvtu.mallshopping.dto.CustomerGroupCreateRequest;
+import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 
 @Service
 @Slf4j
@@ -35,6 +39,9 @@ public class CustomerService {
 
     @Autowired
     private EntityManager entityManager;
+
+    @Autowired
+    private CustomerGroupRepository customerGroupRepository;
 
     public Map<String, Object> listCustomers(int page, int size) {
         log.info("获取客户列表, 页码: {}, 每页数量: {}", page, size);
@@ -324,5 +331,204 @@ public class CustomerService {
 
         log.info("测试客户数据生成完成");
         return response;
+    }
+
+    public Map<String, Object> createTestCustomerGroup() {
+        log.info("开始创建测试客户群组");
+        
+        try {
+            Faker faker = new Faker(new Locale("zh_CN"));
+            
+            // 生成随机群组名称
+            String groupName = faker.commerce().department() + "客户组-" + 
+                              faker.number().randomNumber(4, true);
+            
+            // 创建一个测试群组
+            CustomerGroup group = CustomerGroup.builder()
+                .name(groupName)
+                .metadata(Map.of(
+                    "description", faker.commerce().productName() + " - " + faker.company().catchPhrase(),
+                    "discount", faker.options().option("5%", "10%", "15%", "20%", "25%"),
+                    "createdAt", LocalDate.now().toString(),
+                    "type", faker.options().option("retail", "wholesale", "vip"),
+                    "level", faker.options().option("bronze", "silver", "gold", "platinum"),
+                    "tags", faker.commerce().department() + "," + faker.commerce().material()
+                ))
+                .customers(new ArrayList<>())
+                .build();
+
+            group = customerGroupRepository.save(group);
+            log.info("测试客户群组创建成功, ID: {}, 名称: {}", group.getId(), group.getName());
+
+            // 格式化响应
+            Map<String, Object> groupData = new HashMap<>();
+            groupData.put("id", group.getId().toString());
+            groupData.put("name", group.getName());
+            groupData.put("metadata", group.getMetadata());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("customer_group", groupData);
+            
+            return response;
+        } catch (Exception e) {
+            log.error("创建测试客户群组失败", e);
+            throw e;
+        }
+    }
+
+    public Map<String, Object> addCustomerToGroup(Long customerId, List<String> groupIds) {
+        log.info("开始将客户添加到群组, 客户ID: {}, 群组IDs: {}", customerId, groupIds);
+        
+        try {
+            Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+            // 添加客户到指定的群组
+            if (groupIds != null && !groupIds.isEmpty()) {
+                for (String groupId : groupIds) {
+                    CustomerGroup group = customerGroupRepository.findById(Long.parseLong(groupId))
+                        .orElseThrow(() -> new RuntimeException("Customer group not found: " + groupId));
+
+                    if (!customer.getCustomerGroups().contains(group)) {
+                        customer.getCustomerGroups().add(group);
+                        log.info("客户已添加到群组: {}", group.getName());
+                    }
+                }
+            }
+            
+            customer = customerRepository.save(customer);
+            log.info("客户群组更新成功");
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("customer", formatCustomerResponse(customer));
+            
+            return response;
+        } catch (Exception e) {
+            log.error("添加客户到群组失败", e);
+            throw e;
+        }
+    }
+
+    public Map<String, Object> removeCustomerFromGroup(Long customerId, List<String> groupIds) {
+        log.info("开始将客户从群组移除, 客户ID: {}, 群组IDs: {}", customerId, groupIds);
+        
+        try {
+            Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+            // 从指定的群组中移除客户
+            if (groupIds != null && !groupIds.isEmpty()) {
+                for (String groupId : groupIds) {
+                    CustomerGroup group = customerGroupRepository.findById(Long.parseLong(groupId))
+                        .orElseThrow(() -> new RuntimeException("Customer group not found: " + groupId));
+
+                    customer.getCustomerGroups().remove(group);
+                    log.info("客户已从群组移除: {}", group.getName());
+                }
+            }
+            
+            customer = customerRepository.save(customer);
+            log.info("客户群组更新成功");
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("customer", formatCustomerResponse(customer));
+            
+            return response;
+        } catch (Exception e) {
+            log.error("从群组移除客户失败", e);
+            throw e;
+        }
+    }
+
+    public Map<String, Object> listCustomerGroups(int page, int size) {
+        log.info("获取客户群组列表, 页码: {}, 每页数量: {}", page, size);
+        
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<CustomerGroup> groupPage = customerGroupRepository.findAll(pageable);
+            
+            List<Map<String, Object>> formattedGroups = groupPage.getContent().stream()
+                .map(this::formatCustomerGroupResponse)
+                .collect(Collectors.toList());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("customer_groups", formattedGroups);
+            response.put("count", groupPage.getTotalElements());
+            response.put("limit", size);
+            response.put("offset", page * size);
+
+            return response;
+        } catch (Exception e) {
+            log.error("获取客户群组列表失败", e);
+            throw e;
+        }
+    }
+
+    private Map<String, Object> formatCustomerGroupResponse(CustomerGroup group) {
+        Map<String, Object> formatted = new HashMap<>();
+        formatted.put("id", group.getId().toString());
+        formatted.put("name", group.getName());
+        formatted.put("metadata", group.getMetadata());
+        formatted.put("created_at", group.getCreatedAt());
+        formatted.put("updated_at", group.getUpdatedAt());
+        
+        // 格式化客户列表
+        List<Map<String, Object>> customers = group.getCustomers().stream()
+            .map(this::formatCustomerResponse)
+            .collect(Collectors.toList());
+        formatted.put("customers", customers);
+        
+        return formatted;
+    }
+
+    public Map<String, Object> createCustomerGroup(CustomerGroupCreateRequest request) {
+        log.info("开始创建客户群组, 请求数据: {}", request);
+        
+        try {
+            // 检查名称是否已存在
+            if (customerGroupRepository.existsByName(request.getName())) {
+                throw new RuntimeException("Customer group with this name already exists");
+            }
+
+            // 创建新客户群组
+            CustomerGroup group = CustomerGroup.builder()
+                .name(request.getName())
+                .metadata(request.getMetadata())
+                .customers(new ArrayList<>())
+                .build();
+
+            group = customerGroupRepository.save(group);
+            log.info("客户群组创建成功, ID: {}", group.getId());
+
+            // 格式化响应
+            Map<String, Object> response = new HashMap<>();
+            response.put("customer_group", formatCustomerGroupResponse(group));
+            
+            return response;
+        } catch (Exception e) {
+            log.error("创建客户群组失败", e);
+            throw e;
+        }
+    }
+
+    public Map<String, Object> getCustomerGroup(Long id) {
+        log.info("获取客户群组详情, ID: {}", id);
+        
+        try {
+            CustomerGroup group = customerGroupRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer group not found"));
+            
+            // 格式化响应
+            Map<String, Object> response = new HashMap<>();
+            response.put("customer_group", formatCustomerGroupResponse(group));
+            
+            return response;
+        } catch (ResourceNotFoundException e) {
+            log.error("客户群组不存在, ID: {}", id);
+            throw e;
+        } catch (Exception e) {
+            log.error("获取客户群组详情失败, ID: {}", id, e);
+            throw e;
+        }
     }
 } 
