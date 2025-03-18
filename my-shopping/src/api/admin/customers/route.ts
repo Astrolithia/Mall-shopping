@@ -8,41 +8,47 @@ export async function GET(
   res: MedusaResponse
 ) {
   try {
-    console.log("Fetching customers list");
-    const { offset = 0, limit = 10 } = req.query
+    const { q, limit = 10, offset = 0, expand, fields, groups } = req.query
+    
+    console.log("获取客户列表, 查询参数:", req.query);
     
     // 计算页码
     const page = Math.floor(Number(offset) / Number(limit))
     const size = Number(limit)
-
-    const response = await fetch(
-      `${BACKEND_URL}/customers?page=${page}&size=${size}`,
-      {
-        credentials: "include",
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      }
-    )
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch customers')
+    
+    let url = `${BACKEND_URL}/customers?page=${page}&size=${size}`
+    
+    // 如果指定了客户群组 ID，则获取该群组中的客户
+    if (groups) {
+      console.log("获取客户群组中的客户, 群组ID:", groups);
+      url = `${BACKEND_URL}/customers/groups/${groups}/customers?page=${page}&size=${size}`
     }
-
+    
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error('获取客户列表失败')
+    }
+    
     const data = await response.json()
-    console.log("Customers list fetched:", data);
-
-    // 转换响应格式以匹配 Medusa 期望的格式
+    console.log("获取到的客户数据:", data);
+    
+    // 确保响应格式符合 Medusa Admin UI 的期望
     return res.json({
-      customers: data.customers,
-      count: data.count,
-      offset: data.offset,
-      limit: data.limit
+      customers: data.customers || [],
+      count: data.count || 0,
+      offset: Number(offset),
+      limit: Number(limit)
     })
   } catch (error) {
-    console.error("Error fetching customers:", error);
-    throw error;
+    console.error("获取客户列表失败:", error);
+    return res.status(500).json({
+      message: error.message || "获取客户列表失败"
+    })
   }
 }
 

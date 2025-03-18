@@ -796,4 +796,48 @@ public class CustomerService {
             throw e;
         }
     }
+
+    public Map<String, Object> listCustomersInGroup(Long groupId, int page, int size) {
+        log.info("获取客户群组中的客户列表, 群组ID: {}, 页码: {}, 每页数量: {}", groupId, page, size);
+        
+        try {
+            // 查找客户群组
+            CustomerGroup group = customerGroupRepository.findById(groupId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer group not found"));
+            
+            // 获取群组中的客户
+            List<Customer> customers = group.getCustomers();
+            
+            // 分页处理
+            int start = page * size;
+            int end = Math.min(start + size, customers.size());
+            
+            List<Customer> pagedCustomers;
+            if (start < customers.size()) {
+                pagedCustomers = customers.subList(start, end);
+            } else {
+                pagedCustomers = new ArrayList<>();
+            }
+            
+            // 格式化客户列表
+            List<Map<String, Object>> formattedCustomers = pagedCustomers.stream()
+                .map(this::formatCustomerResponse)
+                .collect(Collectors.toList());
+            
+            // 构建响应
+            Map<String, Object> response = new HashMap<>();
+            response.put("customers", formattedCustomers);
+            response.put("count", customers.size());
+            response.put("offset", page * size);
+            response.put("limit", size);
+            
+            return response;
+        } catch (ResourceNotFoundException e) {
+            log.error("客户群组不存在, ID: {}", groupId);
+            throw e;
+        } catch (Exception e) {
+            log.error("获取客户群组中的客户列表失败, 群组ID: {}", groupId, e);
+            throw e;
+        }
+    }
 } 

@@ -255,4 +255,22 @@ public class CustomerController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @GetMapping("/groups/{id}/customers")
+    public ResponseEntity<Map<String, Object>> listCustomersInGroup(
+        @PathVariable Long id,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size
+    ) {
+        log.info("收到获取客户群组中的客户列表请求, 群组ID: {}, page: {}, size: {}", id, page, size);
+        try {
+            Map<String, Object> response = customerService.listCustomersInGroup(id, page, size);
+            return ResponseEntity.ok(response);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("获取客户群组中的客户列表失败", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 } 
