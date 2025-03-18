@@ -50,4 +50,18 @@ public class CustomerController {
         Map<String, Object> response = customerService.updateCustomer(id, request);
         return ResponseEntity.ok(response);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> deleteCustomer(@PathVariable Long id) {
+        log.info("收到删除客户请求, ID: {}", id);
+        Map<String, Object> response = customerService.deleteCustomer(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/seed")
+    public ResponseEntity<Map<String, Object>> seedCustomers() {
+        log.info("收到生成测试客户数据请求");
+        Map<String, Object> response = customerService.seedCustomers();
+        return ResponseEntity.ok(response);
+    }
 } 

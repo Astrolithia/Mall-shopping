@@ -19,6 +19,9 @@ import com.qvtu.mallshopping.dto.CustomerCreateRequest;
 import com.qvtu.mallshopping.repository.AddressRepository;
 import java.util.ArrayList;
 import com.qvtu.mallshopping.dto.CustomerUpdateRequest;
+import com.github.javafaker.Faker;
+import java.util.Locale;
+import java.time.LocalDate;
 
 @Service
 @Slf4j
@@ -205,6 +208,96 @@ public class CustomerService {
         Map<String, Object> response = new HashMap<>();
         response.put("customer", formatCustomerResponse(customer));
         
+        return response;
+    }
+
+    public Map<String, Object> deleteCustomer(Long id) {
+        log.info("开始删除客户, ID: {}", id);
+        
+        // 检查客户是否存在
+        Customer customer = customerRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+        // 删除客户
+        customerRepository.delete(customer);
+        log.info("客户删除成功, ID: {}", id);
+
+        // 格式化响应
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", id.toString());
+        response.put("object", "customer");
+        response.put("deleted", true);
+        
+        return response;
+    }
+
+    public Map<String, Object> seedCustomers() {
+        log.info("开始生成测试客户数据");
+        
+        Faker faker = new Faker(new Locale("zh_CN"));
+        List<Customer> customers = new ArrayList<>();
+
+        for (int i = 0; i < 5; i++) {
+            String firstName = faker.name().firstName();
+            String lastName = faker.name().lastName();
+            String email = faker.internet().emailAddress();
+            String phone = faker.phoneNumber().cellPhone();
+            String companyName = faker.company().name();
+
+            // 创建客户
+            Customer customer = Customer.builder()
+                .email(email)
+                .hasAccount(true)
+                .companyName(companyName)
+                .firstName(firstName)
+                .lastName(lastName)
+                .metadata(Map.of(
+                    "source", "seed",
+                    "customerType", faker.options().option("retail", "wholesale", "vip"),
+                    "registrationDate", LocalDate.now().toString(),
+                    "notes", faker.lorem().sentence()
+                ))
+                .addresses(new ArrayList<>())
+                .build();
+
+            // 创建默认地址
+            Address address = Address.builder()
+                .customer(customer)
+                .addressName("默认地址")
+                .isDefaultShipping(true)
+                .isDefaultBilling(true)
+                .company(companyName)
+                .firstName(firstName)
+                .lastName(lastName)
+                .address1(faker.address().streetAddress())
+                .address2(faker.address().buildingNumber())
+                .city(faker.address().city())
+                .countryCode("CN")
+                .province(faker.address().state())
+                .postalCode(faker.address().zipCode())
+                .phone(phone)
+                .metadata(new HashMap<>())
+                .build();
+
+            customer = customerRepository.save(customer);
+            address = addressRepository.save(address);
+
+            customer.getAddresses().add(address);
+            customer.setDefaultBillingAddressId(address.getId().toString());
+            customer.setDefaultShippingAddressId(address.getId().toString());
+            customer = customerRepository.save(customer);
+
+            customers.add(customer);
+            log.info("已生成测试客户: {}", customer.getEmail());
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("customers", customers.stream()
+            .map(this::formatCustomerResponse)
+            .collect(Collectors.toList()));
+        response.put("count", customers.size());
+
+        log.info("测试客户数据生成完成");
         return response;
     }
 } 
