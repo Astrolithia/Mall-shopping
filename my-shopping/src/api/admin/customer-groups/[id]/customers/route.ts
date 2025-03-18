@@ -12,36 +12,25 @@ export async function DELETE(
     // 打印整个请求体，看看前端发送了什么
     console.log("收到的请求体:", req.body);
     
-    // 尝试从不同的位置获取 customer_ids
-    let customer_ids = req.body?.customer_ids || [];
+    // 从请求体中获取 remove 参数
+    const remove = req.body?.remove || [];
     
-    // 如果 customer_ids 不在请求体的顶层，尝试其他可能的位置
-    if (!customer_ids || customer_ids.length === 0) {
-      if (req.body?.remove && Array.isArray(req.body.remove)) {
-        // 前端可能发送的是 { remove: [ '7', '8' ] }
-        customer_ids = req.body.remove;
-      } else if (req.body?.payload?.customer_ids) {
-        customer_ids = req.body.payload.customer_ids;
-      } else if (req.body?.data?.customer_ids) {
-        customer_ids = req.body.data.customer_ids;
-      }
-    }
-    
-    console.log("从客户群组中移除客户, 群组ID:", id, "客户IDs:", customer_ids);
+    console.log("从客户群组中移除客户, 群组ID:", id, "客户IDs:", remove);
 
-    // 如果仍然没有找到有效的 customer_ids，返回错误
-    if (!customer_ids || !Array.isArray(customer_ids) || customer_ids.length === 0) {
+    // 如果没有要移除的客户，返回错误
+    if (!remove || !Array.isArray(remove) || remove.length === 0) {
       return res.status(400).json({
         message: "必须提供要移除的客户ID列表"
       })
     }
 
+    // 将 remove 参数转换为 customer_ids 参数，以符合后端 API 的要求
     const response = await fetch(`${BACKEND_URL}/customers/groups/${id}/customers`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ customer_ids })
+      body: JSON.stringify({ customer_ids: remove })
     })
 
     if (!response.ok) {
@@ -53,7 +42,24 @@ export async function DELETE(
       throw new Error('从客户群组中移除客户失败')
     }
 
-    return res.status(200).json({})
+    // 获取更新后的客户群组详情
+    const getResponse = await fetch(
+      `${BACKEND_URL}/customers/groups/${id}`,
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+
+    if (!getResponse.ok) {
+      throw new Error('获取更新后的客户群组详情失败')
+    }
+
+    const data = await getResponse.json()
+    console.log("从客户群组中移除客户成功:", data);
+
+    return res.json(data)
   } catch (error) {
     console.error("从客户群组中移除客户失败:", error);
     return res.status(500).json({
@@ -72,36 +78,25 @@ export async function POST(
     // 打印整个请求体，看看前端发送了什么
     console.log("收到的请求体:", req.body);
     
-    // 尝试从不同的位置获取 customer_ids
-    let customer_ids = req.body?.customer_ids || [];
+    // 从请求体中获取 add 参数
+    const add = req.body?.add || [];
     
-    // 如果 customer_ids 不在请求体的顶层，尝试其他可能的位置
-    if (!customer_ids || customer_ids.length === 0) {
-      if (req.body?.add && Array.isArray(req.body.add)) {
-        // 前端发送的是 { add: [ '7', '8' ] }
-        customer_ids = req.body.add;
-      } else if (req.body?.payload?.customer_ids) {
-        customer_ids = req.body.payload.customer_ids;
-      } else if (req.body?.data?.customer_ids) {
-        customer_ids = req.body.data.customer_ids;
-      }
-    }
-    
-    console.log("向客户群组添加客户, 群组ID:", id, "客户IDs:", customer_ids);
+    console.log("向客户群组添加客户, 群组ID:", id, "客户IDs:", add);
 
-    // 如果仍然没有找到有效的 customer_ids，返回错误
-    if (!customer_ids || !Array.isArray(customer_ids) || customer_ids.length === 0) {
+    // 如果没有要添加的客户，返回错误
+    if (!add || !Array.isArray(add) || add.length === 0) {
       return res.status(400).json({
         message: "必须提供要添加的客户ID列表"
       })
     }
 
+    // 将 add 参数转换为 customer_ids 参数，以符合后端 API 的要求
     const response = await fetch(`${BACKEND_URL}/customers/groups/${id}/customers`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ customer_ids })
+      body: JSON.stringify({ customer_ids: add })
     })
 
     if (!response.ok) {

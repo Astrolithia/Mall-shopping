@@ -29,8 +29,9 @@ export async function GET(
     }
 
     const data = await response.json()
-    console.log('获取到的客户群组详情:', data)
+    console.log('获取到的客户群组详情:', data);
 
+    // 确保响应格式符合 Medusa Admin UI 的期望
     return res.json(data)
   } catch (error) {
     console.error("获取客户群组详情失败:", error);
