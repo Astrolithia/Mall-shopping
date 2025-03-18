@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qvtu.mallshopping.dto.CustomerCreateRequest;
 import com.qvtu.mallshopping.repository.AddressRepository;
 import java.util.ArrayList;
+import com.qvtu.mallshopping.dto.CustomerUpdateRequest;
 
 @Service
 @Slf4j
@@ -130,6 +131,77 @@ public class CustomerService {
         }
 
         // 格式化响应
+        Map<String, Object> response = new HashMap<>();
+        response.put("customer", formatCustomerResponse(customer));
+        
+        return response;
+    }
+
+    public Map<String, Object> getCustomer(Long id) {
+        log.info("获取客户详情, ID: {}", id);
+        
+        Customer customer = customerRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("customer", formatCustomerResponse(customer));
+        
+        return response;
+    }
+
+    public Map<String, Object> updateCustomer(Long id, CustomerUpdateRequest request) {
+        log.info("开始更新客户信息, ID: {}", id);
+        
+        Customer customer = customerRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+        // 如果要更新邮箱，检查新邮箱是否已被使用
+        if (request.getEmail() != null && !request.getEmail().equals(customer.getEmail())) {
+            customerRepository.findByEmail(request.getEmail()).ifPresent(c -> {
+                throw new RuntimeException("Email already exists");
+            });
+            customer.setEmail(request.getEmail());
+        }
+
+        // 更新基本信息
+        if (request.getCompanyName() != null) {
+            customer.setCompanyName(request.getCompanyName());
+        }
+        if (request.getFirstName() != null) {
+            customer.setFirstName(request.getFirstName());
+        }
+        if (request.getLastName() != null) {
+            customer.setLastName(request.getLastName());
+        }
+        if (request.getMetadata() != null) {
+            customer.setMetadata(request.getMetadata());
+        }
+
+        // 如果提供了新的电话号码，更新或创建默认地址
+        if (request.getPhone() != null) {
+            Address defaultAddress = customer.getAddresses().stream()
+                .filter(addr -> Boolean.TRUE.equals(addr.getIsDefaultBilling()))
+                .findFirst()
+                .orElse(Address.builder()
+                    .customer(customer)
+                    .isDefaultShipping(true)
+                    .isDefaultBilling(true)
+                    .metadata(new HashMap<>())
+                    .build());
+
+            defaultAddress.setPhone(request.getPhone());
+            defaultAddress = addressRepository.save(defaultAddress);
+
+            if (!customer.getAddresses().contains(defaultAddress)) {
+                customer.getAddresses().add(defaultAddress);
+                customer.setDefaultBillingAddressId(defaultAddress.getId().toString());
+                customer.setDefaultShippingAddressId(defaultAddress.getId().toString());
+            }
+        }
+
+        customer = customerRepository.save(customer);
+        log.info("客户信息更新成功, ID: {}", customer.getId());
+
         Map<String, Object> response = new HashMap<>();
         response.put("customer", formatCustomerResponse(customer));
         
