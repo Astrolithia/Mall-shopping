@@ -3,6 +3,7 @@ package com.qvtu.mallshopping.controller;
 import com.qvtu.mallshopping.dto.CustomerCreateRequest;
 import com.qvtu.mallshopping.dto.CustomerUpdateRequest;
 import com.qvtu.mallshopping.dto.CustomerGroupCreateRequest;
+import com.qvtu.mallshopping.dto.CustomerGroupUpdateRequest;
 import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 import com.qvtu.mallshopping.service.CustomerService;
 import lombok.extern.slf4j.Slf4j;
@@ -90,9 +91,9 @@ public class CustomerController {
     }
 
     @PostMapping("/groups/seed")
-    public ResponseEntity<Map<String, Object>> createTestCustomerGroup() {
-        log.info("收到创建测试客户群组请求");
-        Map<String, Object> response = customerService.createTestCustomerGroup();
+    public ResponseEntity<Map<String, Object>> seedCustomerGroups() {
+        log.info("收到生成测试客户群组数据请求");
+        Map<String, Object> response = customerService.seedCustomerGroups();
         return ResponseEntity.ok(response);
     }
 
@@ -125,6 +126,23 @@ public class CustomerController {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
             log.error("获取客户群组详情失败", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/groups/{id}")
+    public ResponseEntity<Map<String, Object>> updateCustomerGroup(
+        @PathVariable Long id,
+        @RequestBody CustomerGroupUpdateRequest request
+    ) {
+        log.info("收到更新客户群组请求, ID: {}, 请求数据: {}", id, request);
+        try {
+            Map<String, Object> response = customerService.updateCustomerGroup(id, request);
+            return ResponseEntity.ok(response);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("更新客户群组失败", e);
             return ResponseEntity.internalServerError().build();
         }
     }

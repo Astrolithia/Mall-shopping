@@ -27,6 +27,7 @@ import com.qvtu.mallshopping.model.CustomerGroup;
 import com.qvtu.mallshopping.repository.CustomerGroupRepository;
 import com.qvtu.mallshopping.dto.CustomerGroupCreateRequest;
 import com.qvtu.mallshopping.exception.ResourceNotFoundException;
+import com.qvtu.mallshopping.dto.CustomerGroupUpdateRequest;
 
 @Service
 @Slf4j
@@ -530,5 +531,133 @@ public class CustomerService {
             log.error("获取客户群组详情失败, ID: {}", id, e);
             throw e;
         }
+    }
+
+    public Map<String, Object> updateCustomerGroup(Long id, CustomerGroupUpdateRequest request) {
+        log.info("开始更新客户群组, ID: {}, 请求数据: {}", id, request);
+        
+        try {
+            // 查找客户群组
+            CustomerGroup group = customerGroupRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer group not found"));
+            
+            // 检查名称是否已存在（如果更新了名称）
+            if (request.getName() != null && !request.getName().equals(group.getName())) {
+                if (customerGroupRepository.existsByName(request.getName())) {
+                    throw new RuntimeException("Customer group with this name already exists");
+                }
+                group.setName(request.getName());
+            }
+            
+            // 更新元数据
+            if (request.getMetadata() != null) {
+                group.setMetadata(request.getMetadata());
+            }
+            
+            // 保存更新
+            group = customerGroupRepository.save(group);
+            log.info("客户群组更新成功, ID: {}", group.getId());
+            
+            // 格式化响应
+            Map<String, Object> response = new HashMap<>();
+            response.put("customer_group", formatCustomerGroupResponse(group));
+            
+            return response;
+        } catch (ResourceNotFoundException e) {
+            log.error("客户群组不存在, ID: {}", id);
+            throw e;
+        } catch (Exception e) {
+            log.error("更新客户群组失败, ID: {}", id, e);
+            throw e;
+        }
+    }
+
+    public Map<String, Object> seedCustomerGroups() {
+        log.info("开始生成测试客户群组数据");
+        
+        Faker faker = new Faker(new Locale("zh_CN"));
+        List<CustomerGroup> groups = new ArrayList<>();
+        
+        // 获取所有客户，用于随机分配到群组
+        List<Customer> allCustomers = customerRepository.findAll();
+        if (allCustomers.isEmpty()) {
+            log.warn("没有客户数据，先生成一些客户数据");
+            seedCustomers();
+            allCustomers = customerRepository.findAll();
+        }
+        
+        // 定义一些常见的客户群组类型
+        String[] groupTypes = {
+            "VIP客户", "新客户", "高频消费", "批发客户", "零售客户", 
+            "企业客户", "个人客户", "会员", "潜在客户", "流失客户"
+        };
+        
+        // 创建5个客户群组
+        for (int i = 0; i < 5; i++) {
+            String groupName = groupTypes[i % groupTypes.length];
+            if (i > 0) {
+                groupName += "-" + faker.commerce().department();
+            }
+            
+            // 检查名称是否已存在
+            if (customerGroupRepository.existsByName(groupName)) {
+                groupName += "-" + faker.number().digits(3);
+            }
+            
+            // 创建群组元数据
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("description", faker.lorem().sentence());
+            metadata.put("discount", faker.options().option("5%", "10%", "15%", "20%", "25%"));
+            metadata.put("priority", faker.number().numberBetween(1, 10));
+            metadata.put("tags", List.of(
+                faker.commerce().material(),
+                faker.commerce().department(),
+                faker.commerce().color()
+            ));
+            
+            // 创建客户群组
+            CustomerGroup group = CustomerGroup.builder()
+                .name(groupName)
+                .metadata(metadata)
+                .customers(new ArrayList<>())
+                .build();
+            
+            group = customerGroupRepository.save(group);
+            
+            // 随机选择1-3个客户添加到群组
+            int customerCount = faker.number().numberBetween(1, Math.min(4, allCustomers.size() + 1));
+            for (int j = 0; j < customerCount; j++) {
+                // 随机选择一个客户
+                Customer customer = allCustomers.get(faker.number().numberBetween(0, allCustomers.size()));
+                
+                // 添加客户到群组
+                if (!group.getCustomers().contains(customer)) {
+                    group.getCustomers().add(customer);
+                    
+                    // 更新客户的群组列表
+                    if (customer.getCustomerGroups() == null) {
+                        customer.setCustomerGroups(new ArrayList<>());
+                    }
+                    customer.getCustomerGroups().add(group);
+                    customerRepository.save(customer);
+                }
+            }
+            
+            // 保存更新后的群组
+            group = customerGroupRepository.save(group);
+            groups.add(group);
+            
+            log.info("已生成测试客户群组: {}, 包含 {} 个客户", group.getName(), group.getCustomers().size());
+        }
+        
+        // 格式化响应
+        Map<String, Object> response = new HashMap<>();
+        response.put("customer_groups", groups.stream()
+            .map(this::formatCustomerGroupResponse)
+            .collect(Collectors.toList()));
+        response.put("count", groups.size());
+        
+        log.info("测试客户群组数据生成完成");
+        return response;
     }
 } 
