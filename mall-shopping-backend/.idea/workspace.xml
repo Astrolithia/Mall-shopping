@@ -5,10 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b1ac2843-4f97-4d53-b3b3-2029f58c811a" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.nvmrc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../my-shopping/src/app/promotions/page.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/service/CampaignService.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/service/CampaignService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -7,34 +7,28 @@ export async function GET(
   res: MedusaResponse
 ) {
   try {
-    const { q, limit = 10, offset = 0, expand, fields } = req.query
+    const { q, limit = 20, offset = 0, fields } = req.query
     
-    console.log("获取促销活动列表, 查询参数:", req.query);
-
+    console.log('获取促销活动列表, 查询参数:', { limit, offset, q, fields })
+    
     // 计算页码
     const page = Math.floor(Number(offset) / Number(limit))
-    const size = Number(limit)
     
-    // 构建请求URL
-    let url = `${BACKEND_URL}/promotions?page=${page}&size=${size}`
-    
-    // 添加可选参数
-    if (expand) {
-      url += `&expand=${expand}`
+    // 构建后端请求URL
+    let backendUrl = `${BACKEND_URL}/promotions?page=${page}&size=${limit}`
+    if (q) {
+      backendUrl += `&q=${encodeURIComponent(q as string)}`
     }
     if (fields) {
-      url += `&fields=${fields}`
+      backendUrl += `&fields=${encodeURIComponent(fields as string)}`
     }
-    if (q) {
-      url += `&q=${encodeURIComponent(q)}`
-    }
+    console.log('请求后端URL:', backendUrl)
 
-    console.log("请求URL:", url);
-
-    const response = await fetch(url, {
+    const response = await fetch(backendUrl, {
       headers: {
         'Content-Type': 'application/json'
-      }
+      },
+      cache: 'no-store'
     })
 
     if (!response.ok) {
@@ -42,36 +36,12 @@ export async function GET(
     }
 
     const data = await response.json()
-    console.log("后端返回的原始数据:", data);
-
-    // 确保每个促销活动对象都有必需的字段
-    const formattedPromotions = data.promotions.map(promo => ({
-      id: promo.id,
-      code: promo.code || "",
-      type: promo.type || "standard",
-      is_automatic: promo.is_automatic || false,
-      campaign_id: promo.campaign_id || null,
-      status: promo.status || "draft",
-      rules: promo.rules || [],
-      application_method: promo.application_method || null,
-      created_at: promo.created_at || new Date().toISOString(),
-      updated_at: promo.updated_at || new Date().toISOString(),
-      deleted_at: promo.deleted_at || null,
-      metadata: promo.metadata || {}
-    }));
-
-    console.log("格式化后的促销活动数据:", formattedPromotions);
-
-    // 返回符合 Medusa Admin UI 期望的格式
-    return res.json({
-      promotions: formattedPromotions,
-      count: data.count || 0,
-      offset: Number(offset),
-      limit: Number(limit)
-    })
+    console.log('后端返回的原始数据:', data)
+    
+    return res.json(data)
 
   } catch (error) {
-    console.error("获取促销活动列表失败:", error);
+    console.error("获取促销活动列表失败:", error)
     return res.status(500).json({
       message: error.message || "获取促销活动列表失败"
     })

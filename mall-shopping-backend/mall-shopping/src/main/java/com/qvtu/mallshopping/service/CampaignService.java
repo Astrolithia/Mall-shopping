@@ -40,6 +40,8 @@ public class CampaignService {
         response.put("campaigns", campaignPage.getContent().stream()
             .map(this::formatCampaignResponse)
             .toList());
+        response.put("limit", size);
+        response.put("offset", page * size);
         response.put("count", campaignPage.getTotalElements());
         
         return response;
