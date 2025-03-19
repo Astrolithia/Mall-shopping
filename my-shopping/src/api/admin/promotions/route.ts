@@ -7,43 +7,66 @@ export async function GET(
   res: MedusaResponse
 ) {
   try {
-    const { q, limit = 20, offset = 0, fields } = req.query
+    const { limit = 10, offset = 0, campaign_id } = req.query
     
-    console.log('获取促销活动列表, 查询参数:', { limit, offset, q, fields })
+    console.log('获取促销活动列表, 查询参数:', { limit, offset, campaign_id })
     
-    // 计算页码
-    const page = Math.floor(Number(offset) / Number(limit))
-    
-    // 构建后端请求URL
-    let backendUrl = `${BACKEND_URL}/promotions?page=${page}&size=${limit}`
-    if (q) {
-      backendUrl += `&q=${encodeURIComponent(q as string)}`
-    }
-    if (fields) {
-      backendUrl += `&fields=${encodeURIComponent(fields as string)}`
-    }
-    console.log('请求后端URL:', backendUrl)
+    // 如果指定了 campaign_id，使用活动促销列表接口
+    if (campaign_id) {
+      const page = Math.floor(Number(offset) / Number(limit))
+      const response = await fetch(
+        `${BACKEND_URL}/campaigns/${campaign_id}/promotions?page=${page}&size=${limit}`,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          cache: 'no-store'
+        }
+      )
 
-    const response = await fetch(backendUrl, {
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      cache: 'no-store'
-    })
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('获取活动促销列表失败:', errorData)
+        return res.status(response.status).json({
+          message: errorData.message || '获取活动促销列表失败',
+          code: 'UNKNOWN',
+          type: response.status === 404 ? 'not_found' : 'unknown'
+        })
+      }
+
+      const data = await response.json()
+      return res.json(data)
+    }
+
+    // 如果没有指定 campaign_id，获取所有促销活动
+    const page = Math.floor(Number(offset) / Number(limit))
+    const response = await fetch(
+      `${BACKEND_URL}/promotions?page=${page}&size=${limit}`,
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    )
 
     if (!response.ok) {
-      throw new Error('获取促销活动列表失败')
+      const errorData = await response.json()
+      return res.status(response.status).json({
+        message: errorData.message || '获取促销活动列表失败',
+        code: 'UNKNOWN',
+        type: response.status === 404 ? 'not_found' : 'unknown'
+      })
     }
 
     const data = await response.json()
-    console.log('后端返回的原始数据:', data)
-    
     return res.json(data)
 
   } catch (error) {
     console.error("获取促销活动列表失败:", error)
     return res.status(500).json({
-      message: error.message || "获取促销活动列表失败"
+      message: error.message || "获取促销活动列表失败",
+      code: 'UNKNOWN',
+      type: 'unknown'
     })
   }
 }

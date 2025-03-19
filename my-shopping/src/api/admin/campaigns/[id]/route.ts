@@ -7,38 +7,58 @@ export async function GET(
   res: MedusaResponse
 ) {
   try {
-    // 从 req.params 中获取 id
-    const id = req.params.id
+    const { id } = req.params
+    const fields = req.query.fields as string
+    
     console.log('获取营销活动详情, ID:', id)
+    console.log('请求字段:', fields)
 
+    // 如果请求包含 promotions 字段，则同时获取促销活动列表
+    if (fields?.includes('promotions')) {
+      const [campaignResponse, promotionsResponse] = await Promise.all([
+        fetch(`${BACKEND_URL}/campaigns/${id}`, {
+          headers: { 'Content-Type': 'application/json' }
+        }),
+        fetch(`${BACKEND_URL}/campaigns/${id}/promotions?page=0&size=100`, {
+          headers: { 'Content-Type': 'application/json' }
+        })
+      ])
+
+      const [campaignData, promotionsData] = await Promise.all([
+        campaignResponse.json(),
+        promotionsResponse.json()
+      ])
+
+      // 合并活动和促销数据
+      return res.json({
+        campaign: {
+          ...campaignData.campaign,
+          promotions: promotionsData.promotions
+        }
+      })
+    }
+
+    // 如果不需要促销数据，只返回活动信息
     const response = await fetch(`${BACKEND_URL}/campaigns/${id}`, {
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      cache: 'no-store'
+      headers: { 'Content-Type': 'application/json' }
     })
 
     if (!response.ok) {
       const errorData = await response.json()
-      console.error('获取营销活动详情失败:', errorData)
-      
-      // 返回符合 Medusa 错误格式的响应
       return res.status(response.status).json({
-        message: errorData.message || '获取营销活动详情失败',
+        message: errorData.message || '获取活动详情失败',
         code: 'UNKNOWN',
         type: response.status === 404 ? 'not_found' : 'unknown'
       })
     }
 
     const data = await response.json()
-    console.log('后端返回的活动数据:', data)
-
     return res.json(data)
 
   } catch (error) {
-    console.error("获取营销活动详情失败:", error)
+    console.error("获取活动详情失败:", error)
     return res.status(500).json({
-      message: error.message || "获取营销活动详情失败",
+      message: error.message || "获取活动详情失败",
       code: 'UNKNOWN',
       type: 'unknown'
     })

@@ -120,4 +120,52 @@ public class CampaignController {
                     .body(Collections.singletonMap("message", e.getMessage()));
         }
     }
+
+    @PostMapping("/{id}/promotions")
+    public ResponseEntity<Map<String, Object>> managePromotions(
+        @PathVariable Long id,
+        @RequestBody Map<String, List<String>> request
+    ) {
+        log.info("收到管理活动促销请求, 活动ID: {}, 请求数据: {}", id, request);
+        try {
+            List<String> addIds = request.getOrDefault("add", new ArrayList<>());
+            List<String> removeIds = request.getOrDefault("remove", new ArrayList<>());
+            
+            log.info("添加促销IDs: {}, 移除促销IDs: {}", addIds, removeIds);
+            
+            Campaign campaign = campaignService.managePromotions(id, addIds, removeIds);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("campaign", campaignService.formatCampaignResponse(campaign));
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("管理活动促销失败", e);
+            if (e.getMessage().equals("Campaign not found")) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.internalServerError()
+                    .body(Collections.singletonMap("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{id}/promotions")
+    public ResponseEntity<Map<String, Object>> getCampaignPromotions(
+        @PathVariable Long id,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size
+    ) {
+        log.info("获取活动的促销列表, 活动ID: {}", id);
+        try {
+            Map<String, Object> response = campaignService.getCampaignPromotions(id, page, size);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("获取活动促销列表失败", e);
+            if (e.getMessage().equals("Campaign not found")) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.internalServerError()
+                    .body(Collections.singletonMap("message", e.getMessage()));
+        }
+    }
 } 

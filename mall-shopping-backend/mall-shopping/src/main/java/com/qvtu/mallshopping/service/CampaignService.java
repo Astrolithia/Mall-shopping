@@ -6,22 +6,30 @@ import com.qvtu.mallshopping.dto.CampaignResponse;
 import com.qvtu.mallshopping.dto.CampaignCreateRequest;
 import com.qvtu.mallshopping.dto.CampaignUpdateRequest;
 import com.qvtu.mallshopping.model.Campaign;
+import com.qvtu.mallshopping.model.Promotion;
 import com.qvtu.mallshopping.repository.CampaignRepository;
+import com.qvtu.mallshopping.repository.PromotionRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 public class CampaignService {
     @Autowired
     private CampaignRepository campaignRepository;
+    
+    @Autowired
+    private PromotionRepository promotionRepository;
     
     @Autowired
     private ObjectMapper objectMapper;
@@ -157,5 +165,90 @@ public class CampaignService {
         log.info("活动删除成功: {}", deletedCampaign);
         
         return deletedCampaign;
+    }
+
+    @Transactional
+    public Campaign managePromotions(Long campaignId, List<String> addIds, List<String> removeIds) {
+        log.info("管理活动促销, 活动ID: {}", campaignId);
+        
+        Campaign campaign = campaignRepository.findById(campaignId)
+            .orElseThrow(() -> new RuntimeException("Campaign not found"));
+        
+        // 添加促销活动
+        if (!addIds.isEmpty()) {
+            log.info("添加促销活动到活动: {}", addIds);
+            List<Promotion> promotionsToAdd = promotionRepository.findAllById(
+                addIds.stream()
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList())
+            );
+            
+            // 更新关联关系
+            for (Promotion promotion : promotionsToAdd) {
+                promotion.setCampaignId(campaignId.toString());
+                promotionRepository.save(promotion);
+            }
+        }
+        
+        // 移除促销活动
+        if (!removeIds.isEmpty()) {
+            log.info("从活动中移除促销活动: {}", removeIds);
+            List<Promotion> promotionsToRemove = promotionRepository.findAllById(
+                removeIds.stream()
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList())
+            );
+            
+            // 更新关联关系
+            for (Promotion promotion : promotionsToRemove) {
+                promotion.setCampaignId(null);
+                promotionRepository.save(promotion);
+            }
+        }
+        
+        // 刷新活动数据
+        campaign = campaignRepository.findById(campaignId).get();
+        log.info("活动促销管理完成: {}", campaign);
+        
+        return campaign;
+    }
+
+    public Map<String, Object> getCampaignPromotions(Long campaignId, int page, int size) {
+        log.info("获取活动的促销列表, 活动ID: {}, page: {}, size: {}", campaignId, page, size);
+        
+        // 验证活动是否存在
+        Campaign campaign = campaignRepository.findById(campaignId)
+            .orElseThrow(() -> new RuntimeException("Campaign not found"));
+        
+        // 获取该活动的所有促销活动
+        Page<Promotion> promotions = promotionRepository.findByCampaignId(
+            campaignId.toString(), 
+            PageRequest.of(page, size)
+        );
+        
+        // 构建响应数据
+        Map<String, Object> response = new HashMap<>();
+        response.put("promotions", promotions.getContent().stream()
+            .map(this::formatPromotionResponse)
+            .collect(Collectors.toList()));
+        response.put("count", promotions.getTotalElements());
+        response.put("limit", size);
+        response.put("offset", page * size);
+        
+        return response;
+    }
+
+    private Map<String, Object> formatPromotionResponse(Promotion promotion) {
+        Map<String, Object> formatted = new HashMap<>();
+        formatted.put("id", promotion.getId().toString());
+        formatted.put("code", promotion.getCode());
+        formatted.put("type", promotion.getType());
+        formatted.put("is_automatic", promotion.isAutomatic());
+        formatted.put("campaign_id", promotion.getCampaignId());
+        formatted.put("status", promotion.getStatus());
+        formatted.put("created_at", promotion.getCreatedAt());
+        formatted.put("updated_at", promotion.getUpdatedAt());
+        formatted.put("deleted_at", promotion.getDeletedAt());
+        return formatted;
     }
 } 

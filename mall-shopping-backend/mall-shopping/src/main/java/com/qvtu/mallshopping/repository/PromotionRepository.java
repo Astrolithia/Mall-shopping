@@ -15,4 +15,5 @@ public interface PromotionRepository extends JpaRepository<Promotion, Long> {
     boolean existsByCode(String code);
     Optional<Promotion> findByCode(String code);
     List<Promotion> findAllByCode(String code);
+    Page<Promotion> findByCampaignId(String campaignId, Pageable pageable);
 } 
