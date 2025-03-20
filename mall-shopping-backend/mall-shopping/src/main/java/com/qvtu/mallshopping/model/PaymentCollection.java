@@ -16,9 +16,14 @@ public class PaymentCollection {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(name = "currency_code")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "order_id", nullable = false, foreignKey = @ForeignKey(name = "fk_payment_collection_order"))
+    private Order order;
+    
+    @Column(nullable = false)
     private String currencyCode;
     
+    @Column(nullable = false)
     private BigDecimal amount;
     
     @Column(name = "authorized_amount")
@@ -33,22 +38,19 @@ public class PaymentCollection {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
     
-    @Convert(converter = JpaJsonConverter.class)
-    private Map<String, Object> metadata;
+    @Column(columnDefinition = "jsonb")
+    private String metadata;
     
+    @Column(nullable = false)
     private String status;
     
     @OneToMany(mappedBy = "paymentCollection", cascade = CascadeType.ALL)
     private List<PaymentSession> paymentSessions;
     
-    @ManyToOne
-    @JoinColumn(name = "order_id")
-    private Order order;
-    
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
     
     @OneToMany(mappedBy = "paymentCollection", fetch = FetchType.LAZY)

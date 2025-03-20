@@ -1,6 +1,7 @@
 package com.qvtu.mallshopping.controller;
 
 import com.qvtu.mallshopping.dto.CreatePaymentCollectionRequest;
+import com.qvtu.mallshopping.dto.MarkAsPaidRequest;
 import com.qvtu.mallshopping.service.PaymentCollectionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -73,6 +74,21 @@ public class PaymentCollectionController {
         try {
             return ResponseEntity.ok(Map.of(
                 "payment_collections", paymentCollectionService.generateRandomPaymentCollections(count)
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/mark-as-paid")
+    public ResponseEntity<?> markAsPaid(
+        @PathVariable Long id,
+        @RequestBody MarkAsPaidRequest request
+    ) {
+        try {
+            return ResponseEntity.ok(Map.of(
+                "payment_collection", paymentCollectionService.markAsPaid(id, request)
             ));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
