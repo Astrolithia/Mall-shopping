@@ -16,6 +16,14 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        // 商城前台 API 的 CORS 配置
+        registry.addMapping("/store/**")
+                .allowedOrigins("http://localhost:3000")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
+
+        // 后台管理 API 的 CORS 配置
         registry.addMapping("/api/**")
                 .allowedOrigins("http://localhost:9000", "http://localhost:8080", "http://localhost:8000")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
@@ -27,6 +35,6 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(authInterceptor)
                 .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/auth/**"); // 排除登录接口
+                .excludePathPatterns("/api/auth/**"); // 排除后台登录接口
     }
 } 

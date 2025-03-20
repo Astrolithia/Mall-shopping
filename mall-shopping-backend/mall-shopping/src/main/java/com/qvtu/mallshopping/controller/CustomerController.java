@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
 @RequestMapping("/api/customers")
@@ -272,5 +274,21 @@ public class CustomerController {
             log.error("获取客户群组中的客户列表失败", e);
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    @PostMapping("/customers")
+    public ResponseEntity<Map<String, Object>> registerCustomer(@Valid @RequestBody CustomerRegisterRequest request) {
+        Customer customer = customerService.createCustomer(request);
+        Map<String, Object> response = new HashMap<>();
+        response.put("customer", customer);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/customers/me")
+    public ResponseEntity<Map<String, Object>> getCustomerProfile(@AuthenticationPrincipal String customerId) {
+        Customer customer = customerService.getCustomerById(Long.valueOf(customerId));
+        Map<String, Object> response = new HashMap<>();
+        response.put("customer", customer);
+        return ResponseEntity.ok(response);
     }
 } 

@@ -4,6 +4,7 @@ import com.qvtu.mallshopping.dto.*;
 import com.qvtu.mallshopping.model.*;
 import com.qvtu.mallshopping.repository.OrderRepository;
 import com.qvtu.mallshopping.repository.ShippingMethodRepository;
+import com.qvtu.mallshopping.repository.OrderChangeRepository;
 import com.qvtu.mallshopping.enums.OrderStatus;
 import com.qvtu.mallshopping.enums.PaymentStatus;
 import com.qvtu.mallshopping.enums.FulfillmentStatus;
@@ -17,38 +18,61 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class OrderService {
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+    
     private final OrderRepository orderRepository;
     private final ShippingMethodRepository shippingMethodRepository;
+    private final OrderChangeRepository orderChangeRepository;
     
     public OrderService(
         OrderRepository orderRepository,
-        ShippingMethodRepository shippingMethodRepository
+        ShippingMethodRepository shippingMethodRepository,
+        OrderChangeRepository orderChangeRepository
     ) {
         this.orderRepository = orderRepository;
         this.shippingMethodRepository = shippingMethodRepository;
+        this.orderChangeRepository = orderChangeRepository;
     }
     
     @Transactional(readOnly = true)
     public Map<String, Object> listOrders(int offset, int limit) {
-        // 获取分页订单数据
-        Page<Order> orderPage = orderRepository.findAll(PageRequest.of(offset/limit, limit));
-        
-        // 转换订单列表
-        List<Map<String, Object>> formattedOrders = orderPage.getContent().stream()
-            .map(this::formatOrderResponse)
-            .collect(Collectors.toList());
+        log.debug("Listing orders with offset: {} and limit: {}", offset, limit);
+        try {
+            // 获取分页订单数据
+            Page<Order> orderPage = orderRepository.findAll(PageRequest.of(offset/limit, limit));
+            log.debug("Found {} orders", orderPage.getTotalElements());
+            
+            // 转换订单列表
+            List<Map<String, Object>> formattedOrders = orderPage.getContent().stream()
+                .map(order -> {
+                    try {
+                        log.debug("Formatting order: {}", order.getId());
+                        return formatOrderResponse(order);
+                    } catch (Exception e) {
+                        log.error("Error formatting order {}: {}", order.getId(), e.getMessage());
+                        throw new RuntimeException("Error formatting order", e);
+                    }
+                })
+                .collect(Collectors.toList());
 
-        // 构建响应
-        Map<String, Object> response = new HashMap<>();
-        response.put("orders", formattedOrders);
-        response.put("count", orderPage.getTotalElements());
-        response.put("offset", offset);
-        response.put("limit", limit);
-        
-        return response;
+            // 构建响应
+            Map<String, Object> response = new HashMap<>();
+            response.put("orders", formattedOrders);
+            response.put("count", orderPage.getTotalElements());
+            response.put("offset", offset);
+            response.put("limit", limit);
+            
+            return response;
+        } catch (Exception e) {
+            log.error("Error listing orders: ", e);
+            throw e;
+        }
     }
     
     private Map<String, Object> formatOrderItem(OrderItem item) {
@@ -102,45 +126,62 @@ public class OrderService {
     }
 
     private Map<String, Object> formatOrderResponse(Order order) {
-        Map<String, Object> formatted = new HashMap<>();
-        formatted.put("id", order.getId());
-        formatted.put("status", order.getStatus());
-        formatted.put("payment_status", order.getPaymentStatus());
-        formatted.put("fulfillment_status", order.getFulfillmentStatus());
-        formatted.put("customer_id", order.getCustomerId());
-        formatted.put("email", order.getEmail());
-        formatted.put("currency_code", order.getCurrencyCode());
-        formatted.put("created_at", order.getCreatedAt());
-        formatted.put("updated_at", order.getUpdatedAt());
-        
-        // 格式化订单项
-        List<Map<String, Object>> items = order.getItems().stream()
-            .map(this::formatOrderItem)
-            .collect(Collectors.toList());
-        formatted.put("items", items);
-        
-        // 格式化支付集合
-        List<Map<String, Object>> paymentCollections = order.getPaymentCollections().stream()
-            .map(this::formatPaymentCollection)
-            .collect(Collectors.toList());
-        formatted.put("payment_collections", paymentCollections);
-        
-        // 格式化配送方式
-        List<Map<String, Object>> shippingMethods = order.getShippingMethods().stream()
-            .map(this::formatShippingMethod)
-            .collect(Collectors.toList());
-        formatted.put("shipping_methods", shippingMethods);
-        
-        // 添加订单汇总信息
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("total", order.getTotal());
-        summary.put("subtotal", order.getSubtotal());
-        summary.put("tax_total", order.getTaxTotal());
-        summary.put("shipping_total", order.getShippingTotal());
-        summary.put("discount_total", order.getDiscountTotal());
-        formatted.put("summary", summary);
+        log.debug("Formatting order response for order ID: {}", order.getId());
+        try {
+            Map<String, Object> formatted = new HashMap<>();
+            formatted.put("id", order.getId());
+            
+            // 添加状态前的日志和空值检查
+            OrderStatus status = order.getStatus();
+            log.debug("Order {} status before formatting: {}", order.getId(), status);
+            formatted.put("status", status != null ? status.name() : null);
+            
+            PaymentStatus paymentStatus = order.getPaymentStatus();
+            log.debug("Order {} payment status before formatting: {}", order.getId(), paymentStatus);
+            formatted.put("payment_status", paymentStatus != null ? paymentStatus.name() : null);
+            
+            FulfillmentStatus fulfillmentStatus = order.getFulfillmentStatus();
+            log.debug("Order {} fulfillment status before formatting: {}", order.getId(), fulfillmentStatus);
+            formatted.put("fulfillment_status", fulfillmentStatus != null ? fulfillmentStatus.name() : null);
+            
+            formatted.put("customer_id", order.getCustomerId());
+            formatted.put("email", order.getEmail());
+            formatted.put("currency_code", order.getCurrencyCode());
+            formatted.put("created_at", order.getCreatedAt());
+            formatted.put("updated_at", order.getUpdatedAt());
+            
+            // 格式化订单项
+            List<Map<String, Object>> items = order.getItems().stream()
+                .map(this::formatOrderItem)
+                .collect(Collectors.toList());
+            formatted.put("items", items);
+            
+            // 格式化支付集合
+            List<Map<String, Object>> paymentCollections = order.getPaymentCollections().stream()
+                .map(this::formatPaymentCollection)
+                .collect(Collectors.toList());
+            formatted.put("payment_collections", paymentCollections);
+            
+            // 格式化配送方式
+            List<Map<String, Object>> shippingMethods = order.getShippingMethods().stream()
+                .map(this::formatShippingMethod)
+                .collect(Collectors.toList());
+            formatted.put("shipping_methods", shippingMethods);
+            
+            // 添加订单汇总信息
+            Map<String, Object> summary = new HashMap<>();
+            summary.put("total", order.getTotal());
+            summary.put("subtotal", order.getSubtotal());
+            summary.put("tax_total", order.getTaxTotal());
+            summary.put("shipping_total", order.getShippingTotal());
+            summary.put("discount_total", order.getDiscountTotal());
+            formatted.put("summary", summary);
 
-        return formatted;
+            return formatted;
+        } catch (Exception e) {
+            log.error("Error formatting order {}: ", order.getId(), e);
+            throw new RuntimeException("Error formatting order: " + e.getMessage(), e);
+        }
     }
     
     private OrderDTO convertToDTO(Order order) {
@@ -311,156 +352,359 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getOrder(Long id) {
-        Order order = orderRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Order not found"));
-        
-        Map<String, Object> orderMap = new HashMap<>();
-        
-        // 基本信息
-        orderMap.put("id", order.getId().toString());
-        orderMap.put("version", order.getVersion());
-        orderMap.put("region_id", order.getRegionId());
-        orderMap.put("customer_id", order.getCustomerId());
-        orderMap.put("sales_channel_id", order.getSalesChannelId());
-        orderMap.put("email", order.getEmail());
-        orderMap.put("currency_code", order.getCurrencyCode());
-        orderMap.put("payment_status", order.getPaymentStatus().toString());
-        orderMap.put("fulfillment_status", order.getFulfillmentStatus().toString());
-        orderMap.put("status", order.getStatus().toString());
-        
-        // 支付集合
-        if (order.getPaymentCollections() != null) {
-            List<Map<String, Object>> paymentCollections = order.getPaymentCollections().stream()
-                .map(pc -> {
-                    Map<String, Object> pcMap = new HashMap<>();
-                    pcMap.put("id", pc.getId().toString());
-                    pcMap.put("currency_code", pc.getCurrencyCode());
-                    pcMap.put("amount", pc.getAmount());
-                    pcMap.put("status", pc.getStatus());
-                    
-                    // 支付提供商
-                    if (pc.getPaymentProviders() != null) {
-                        pcMap.put("payment_providers", pc.getPaymentProviders().stream()
-                            .map(pp -> Map.of(
-                                "id", pp.getProviderId(),
-                                "is_enabled", pp.getIsEnabled()
-                            ))
-                            .collect(Collectors.toList()));
-                    }
-                    
-                    return pcMap;
-                })
-                .collect(Collectors.toList());
-            orderMap.put("payment_collections", paymentCollections);
+        log.debug("Getting order with ID: {}", id);
+        try {
+            Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+            
+            log.debug("Found order: {}", order);
+            log.debug("Order status: {}", order.getStatus());
+            log.debug("Order payment status: {}", order.getPaymentStatus());
+            log.debug("Order fulfillment status: {}", order.getFulfillmentStatus());
+            
+            return formatOrderResponse(order);
+        } catch (Exception e) {
+            log.error("Error getting order {}: ", id, e);
+            throw e;
         }
-        
-        // 订单项
-        if (order.getItems() != null) {
-            List<Map<String, Object>> items = order.getItems().stream()
-                .map(item -> {
-                    Map<String, Object> itemMap = new HashMap<>();
-                    itemMap.put("id", item.getId().toString());
-                    itemMap.put("title", item.getTitle());
-                    itemMap.put("subtitle", item.getSubtitle());
-                    itemMap.put("thumbnail", item.getThumbnail());
-                    itemMap.put("variant_id", item.getVariantId());
-                    itemMap.put("product_id", item.getProductId());
-                    itemMap.put("quantity", item.getQuantity());
-                    itemMap.put("unit_price", item.getUnitPrice());
-                    itemMap.put("total", item.getTotal());
-                    itemMap.put("subtotal", item.getSubtotal());
-                    itemMap.put("created_at", item.getCreatedAt());
-                    itemMap.put("updated_at", item.getUpdatedAt());
-                    itemMap.put("metadata", item.getMetadata());
-                    return itemMap;
-                })
-                .collect(Collectors.toList());
-            orderMap.put("items", items);
-        }
-        
-        // 配送方法
-        if (order.getShippingMethods() != null) {
-            List<Map<String, Object>> shippingMethods = order.getShippingMethods().stream()
-                .map(sm -> {
-                    Map<String, Object> smMap = new HashMap<>();
-                    smMap.put("id", sm.getId().toString());
-                    smMap.put("name", sm.getName());
-                    smMap.put("amount", sm.getAmount());
-                    smMap.put("shipping_option_id", sm.getShippingOptionId());
-                    smMap.put("created_at", sm.getCreatedAt());
-                    smMap.put("updated_at", sm.getUpdatedAt());
-                    return smMap;
-                })
-                .collect(Collectors.toList());
-            orderMap.put("shipping_methods", shippingMethods);
-        }
-        
-        // 订单汇总信息
-        if (order.getSummary() != null) {
-            Map<String, Object> summary = new HashMap<>();
-            summary.put("paid_total", order.getSummary().getPaidTotal());
-            summary.put("refunded_total", order.getSummary().getRefundedTotal());
-            summary.put("pending_difference", order.getSummary().getPendingDifference());
-            summary.put("current_order_total", order.getSummary().getCurrentOrderTotal());
-            summary.put("original_order_total", order.getSummary().getOriginalOrderTotal());
-            orderMap.put("summary", summary);
-        }
-        
-        // 金额相关
-        orderMap.put("item_total", order.getItemTotal());
-        orderMap.put("subtotal", order.getSubtotal());
-        orderMap.put("tax_total", order.getTaxTotal());
-        orderMap.put("shipping_total", order.getShippingTotal());
-        orderMap.put("discount_total", order.getDiscountTotal());
-        orderMap.put("total", order.getTotal());
-        
-        // 时间戳
-        orderMap.put("created_at", order.getCreatedAt());
-        orderMap.put("updated_at", order.getUpdatedAt());
-        
-        return orderMap;
     }
 
     @Transactional
     public Map<String, Object> updateOrder(Long id, UpdateOrderRequest request) {
+        Order order = orderRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Order not found"));
+        
+        System.out.println("============ DEBUG INFO ============");
+        System.out.println("Order ID: " + order.getId());
+        System.out.println("Current order status: " + order.getStatus());
+        System.out.println("Current payment status: " + order.getPaymentStatus());
+        System.out.println("Current fulfillment status: " + order.getFulfillmentStatus());
+        System.out.println("Request content: " + request);
+        
+        if (request != null) {
+            if (request.getPaymentStatus() != null) {
+                try {
+                    System.out.println("\nProcessing payment status update:");
+                    System.out.println("Raw payment status from request: " + request.getPaymentStatus());
+                    String paymentStatusStr = request.getPaymentStatus().toLowerCase();
+                    System.out.println("Converted to lowercase: " + paymentStatusStr);
+                    System.out.println("Available payment statuses: " + Arrays.toString(PaymentStatus.values()));
+                    PaymentStatus newPaymentStatus = PaymentStatus.valueOf(paymentStatusStr);
+                    System.out.println("Successfully converted to enum: " + newPaymentStatus);
+                    
+                    System.out.println("Before setting payment status: " + order.getPaymentStatus());
+                    order.setPaymentStatus(newPaymentStatus);
+                    System.out.println("After setting payment status: " + order.getPaymentStatus());
+                } catch (Exception e) {
+                    System.out.println("Failed to update payment status: " + e.getMessage());
+                    e.printStackTrace();
+                    throw new RuntimeException("Invalid payment status: " + request.getPaymentStatus() 
+                        + ". Available values are: " + Arrays.toString(PaymentStatus.values()));
+                }
+            }
+            
+            if (request.getFulfillmentStatus() != null) {
+                try {
+                    System.out.println("\nProcessing fulfillment status update:");
+                    System.out.println("Raw fulfillment status from request: " + request.getFulfillmentStatus());
+                    String fulfillmentStatusStr = request.getFulfillmentStatus().toLowerCase();
+                    System.out.println("Converted to lowercase: " + fulfillmentStatusStr);
+                    System.out.println("Available fulfillment statuses: " + Arrays.toString(FulfillmentStatus.values()));
+                    FulfillmentStatus newFulfillmentStatus = FulfillmentStatus.valueOf(fulfillmentStatusStr);
+                    System.out.println("Successfully converted to enum: " + newFulfillmentStatus);
+                    order.setFulfillmentStatus(newFulfillmentStatus);
+                    System.out.println("New fulfillment status set: " + order.getFulfillmentStatus());
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Failed to update fulfillment status: " + e.getMessage());
+                    System.out.println("Available fulfillment statuses: " + Arrays.toString(FulfillmentStatus.values()));
+                    throw new RuntimeException("Invalid fulfillment status: " + request.getFulfillmentStatus() 
+                        + ". Available values are: " + Arrays.toString(FulfillmentStatus.values()));
+                }
+            }
+            
+            order.setUpdatedAt(LocalDateTime.now());
+            try {
+                System.out.println("\nSaving order to database...");
+                System.out.println("Payment status before save: " + order.getPaymentStatus());
+                order = orderRepository.save(order);
+                System.out.println("Order saved successfully");
+                System.out.println("Payment status after save: " + order.getPaymentStatus());
+                
+                Order savedOrder = orderRepository.findById(order.getId()).orElse(null);
+                if (savedOrder != null) {
+                    System.out.println("Re-fetched order payment status: " + savedOrder.getPaymentStatus());
+                }
+            } catch (Exception e) {
+                System.out.println("Failed to save order: " + e.getMessage());
+                e.printStackTrace();
+                throw e;
+            }
+        }
+        
+        System.out.println("============ END DEBUG INFO ============");
+        return getOrder(id);
+    }
+
+    @Transactional
+    public Map<String, Object> archiveOrder(Long id, ArchiveOrderRequest request) {
+        // 验证请求参数
+        if (request == null || !id.equals(request.getOrderId())) {
+            throw new RuntimeException("Order ID mismatch");
+        }
+
         // 获取订单
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Order not found"));
         
-        // 如果请求体不为空，更新相应字段
-        if (request != null) {
-            if (request.getEmail() != null) {
-                order.setEmail(request.getEmail());
-            }
-            if (request.getRegionId() != null) {
-                order.setRegionId(request.getRegionId());
-            }
-            if (request.getCustomerId() != null) {
-                order.setCustomerId(request.getCustomerId());
-            }
-            if (request.getSalesChannelId() != null) {
-                order.setSalesChannelId(request.getSalesChannelId());
-            }
-            if (request.getCurrencyCode() != null) {
-                order.setCurrencyCode(request.getCurrencyCode());
-            }
-            if (request.getMetadata() != null) {
-                // 如果已有metadata，则合并，否则直接设置
-                if (order.getMetadata() != null) {
-                    order.getMetadata().putAll(request.getMetadata());
-                } else {
-                    order.setMetadata(request.getMetadata());
-                }
-            }
-            
-            // 更新时间戳
-            order.setUpdatedAt(LocalDateTime.now());
-            
-            // 保存更新
-            order = orderRepository.save(order);
+        // 检查订单状态是否允许存档
+        if (order.getStatus() == OrderStatus.archived) {
+            throw new RuntimeException("Order is already archived");
         }
         
+        // 验证订单是否可以被存档（例如：已完成的订单）
+        if (order.getStatus() != OrderStatus.completed && 
+            order.getStatus() != OrderStatus.canceled) {
+            throw new RuntimeException("Only completed or canceled orders can be archived");
+        }
+        
+        // 更新订单状态
+        OrderStatus originalStatus = order.getStatus();
+        order.setStatus(OrderStatus.archived);
+        order.setUpdatedAt(LocalDateTime.now());
+        
+        // 创建变更记录
+        createOrderChange(order, "Order archived");
+        
+        // 保存更新
+        order = orderRepository.save(order);
+        
         // 返回更新后的订单详情
+        return getOrder(id);
+    }
+
+    @Transactional
+    public Map<String, Object> cancelOrder(Long id) {
+        // 获取订单
+        Order order = orderRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Order not found"));
+        
+        // 检查订单状态是否允许取消
+        if (order.getStatus() == OrderStatus.canceled) {
+            throw new RuntimeException("Order is already canceled");
+        }
+        
+        // 验证订单是否可以被取消（例如：不能取消已完成的订单）
+        if (order.getStatus() == OrderStatus.completed || 
+            order.getStatus() == OrderStatus.archived) {
+            throw new RuntimeException("Completed or archived orders cannot be canceled");
+        }
+        
+        // 更新订单状态
+        OrderStatus originalStatus = order.getStatus();
+        order.setStatus(OrderStatus.canceled);
+        order.setPaymentStatus(PaymentStatus.canceled);
+        order.setFulfillmentStatus(FulfillmentStatus.canceled);
+        order.setUpdatedAt(LocalDateTime.now());
+        
+        // 创建变更记录
+        createOrderChange(order, "Order canceled");
+        
+        // 取消相关的支付集合
+        if (order.getPaymentCollections() != null) {
+            order.getPaymentCollections().forEach(pc -> {
+                if (!"canceled".equals(pc.getStatus())) {
+                    pc.setStatus("canceled");
+                    pc.setUpdatedAt(LocalDateTime.now());
+                }
+            });
+        }
+        
+        // 保存更新
+        order = orderRepository.save(order);
+        
+        // 返回更新后的订单详情
+        return getOrder(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getOrderChanges(Long orderId) {
+        // 获取订单变更历史
+        List<OrderChange> changes = orderChangeRepository.findByOrderIdOrderByCreatedAtDesc(orderId);
+        
+        // 转换为响应格式
+        return changes.stream().map(change -> {
+            Map<String, Object> changeMap = new HashMap<>();
+            changeMap.put("id", change.getId());
+            changeMap.put("version", change.getVersion());
+            changeMap.put("order_id", change.getOrderId());
+            changeMap.put("return_id", change.getReturnId());
+            changeMap.put("exchange_id", change.getExchangeId());
+            changeMap.put("claim_id", change.getClaimId());
+            changeMap.put("status", change.getStatus());
+            changeMap.put("requested_by", change.getRequestedBy());
+            changeMap.put("requested_at", change.getRequestedAt());
+            changeMap.put("confirmed_by", change.getConfirmedBy());
+            changeMap.put("confirmed_at", change.getConfirmedAt());
+            changeMap.put("declined_by", change.getDeclinedBy());
+            changeMap.put("declined_reason", change.getDeclinedReason());
+            changeMap.put("declined_at", change.getDeclinedAt());
+            changeMap.put("canceled_by", change.getCanceledBy());
+            changeMap.put("canceled_at", change.getCanceledAt());
+            changeMap.put("metadata", change.getMetadata());
+            changeMap.put("created_at", change.getCreatedAt());
+            changeMap.put("updated_at", change.getUpdatedAt());
+            
+            // 如果需要，可以添加关联的订单、退货、换货等信息
+            if (change.getOrderId() != null) {
+                changeMap.put("order", getOrder(change.getOrderId()));
+            }
+            
+            return changeMap;
+        }).collect(Collectors.toList());
+    }
+
+    // 创建订单变更记录的辅助方法
+    private OrderChange createOrderChange(Order order, String description) {
+        OrderChange change = new OrderChange();
+        change.setOrderId(order.getId());
+        change.setVersion(order.getVersion());
+        change.setStatus(order.getStatus().toString());
+        change.setRequestedBy("system"); // 可以从认证上下文中获取当前用户
+        change.setRequestedAt(LocalDateTime.now());
+        change.setConfirmedBy("system");
+        change.setConfirmedAt(LocalDateTime.now());
+        
+        // 设置元数据
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("description", description);
+        change.setMetadata(metadata);
+        
+        // 设置时间戳
+        LocalDateTime now = LocalDateTime.now();
+        change.setCreatedAt(now);
+        change.setUpdatedAt(now);
+        
+        // 保存变更记录
+        return orderChangeRepository.save(change);
+    }
+
+    @Transactional
+    public Map<String, Object> completeOrder(Long id, CompleteOrderRequest request) {
+        // 获取订单
+        Order order = orderRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Order not found"));
+        
+        // 检查订单状态是否允许完成
+        if (order.getStatus() == OrderStatus.completed) {
+            throw new RuntimeException("Order is already completed");
+        }
+        
+        // 验证订单是否可以被完成
+        if (order.getStatus() == OrderStatus.archived || 
+            order.getStatus() == OrderStatus.canceled) {
+            throw new RuntimeException("Archived or canceled orders cannot be completed");
+        }
+        
+        // 检查支付状态
+        if (order.getPaymentStatus() != PaymentStatus.paid) {
+            throw new RuntimeException("Cannot complete order with unpaid payment status");
+        }
+        
+        // 检查配送状态
+        if (order.getFulfillmentStatus() != FulfillmentStatus.fulfilled) {
+            throw new RuntimeException("Cannot complete order with unfulfilled status");
+        }
+        
+        // 更新订单状态
+        OrderStatus originalStatus = order.getStatus();
+        order.setStatus(OrderStatus.completed);
+        order.setUpdatedAt(LocalDateTime.now());
+        
+        // 创建变更记录
+        createOrderChange(order, "Order completed");
+        
+        // 保存更新
+        order = orderRepository.save(order);
+        
+        // 返回更新后的订单详情
+        return getOrder(id);
+    }
+
+    @Transactional
+    public void testEnumConversion(String paymentStatus, String fulfillmentStatus) {
+        log.info("Testing enum conversion...");
+        
+        try {
+            PaymentStatus ps = PaymentStatus.valueOf(paymentStatus.toLowerCase());
+            log.info("Successfully converted payment status: {} -> {}", paymentStatus, ps);
+        } catch (IllegalArgumentException e) {
+            log.error("Failed to convert payment status: {}", paymentStatus);
+            log.error("Available payment statuses: {}", Arrays.toString(PaymentStatus.values()));
+        }
+        
+        try {
+            FulfillmentStatus fs = FulfillmentStatus.valueOf(fulfillmentStatus.toLowerCase());
+            log.info("Successfully converted fulfillment status: {} -> {}", fulfillmentStatus, fs);
+        } catch (IllegalArgumentException e) {
+            log.error("Failed to convert fulfillment status: {}", fulfillmentStatus);
+            log.error("Available fulfillment statuses: {}", Arrays.toString(FulfillmentStatus.values()));
+        }
+    }
+
+    @Transactional
+    public Map<String, Object> fulfillOrder(Long id, FulfillOrderRequest request) {
+        // 获取订单
+        Order order = orderRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Order not found"));
+        
+        // 验证订单状态
+        if (order.getFulfillmentStatus() == FulfillmentStatus.fulfilled) {
+            throw new RuntimeException("Order is already fulfilled");
+        }
+        
+        if (order.getFulfillmentStatus() == FulfillmentStatus.canceled) {
+            throw new RuntimeException("Cannot fulfill canceled order");
+        }
+        
+        // 验证请求项
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            throw new RuntimeException("No items to fulfill");
+        }
+        
+        // 验证并更新每个订单项的配送数量
+        for (FulfillOrderRequest.FulfillmentItem fulfillItem : request.getItems()) {
+            OrderItem orderItem = order.getItems().stream()
+                .filter(item -> item.getId().toString().equals(fulfillItem.getId()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Order item not found: " + fulfillItem.getId()));
+            
+            if (fulfillItem.getQuantity() <= 0) {
+                throw new RuntimeException("Invalid quantity for item: " + fulfillItem.getId());
+            }
+            
+            // 这里可以添加更多的业务逻辑，比如库存检查等
+        }
+        
+        // 更新订单配送状态
+        order.setFulfillmentStatus(FulfillmentStatus.fulfilled);
+        order.setUpdatedAt(LocalDateTime.now());
+        
+        // 如果有元数据，更新订单元数据
+        if (request.getMetadata() != null) {
+            if (order.getMetadata() == null) {
+                order.setMetadata(request.getMetadata());
+            } else {
+                order.getMetadata().putAll(request.getMetadata());
+            }
+        }
+        
+        // 创建订单变更记录
+        createOrderChange(order, "Order fulfilled");
+        
+        // 保存订单
+        order = orderRepository.save(order);
+        
+        // 返回更新后的订单信息
         return getOrder(id);
     }
 } 

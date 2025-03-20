@@ -31,21 +31,29 @@ public class Customer {
     @Column(unique = true)
     private String email;
 
-    private Boolean hasAccount;
+    @Column(nullable = false)
+    private String password;
     
     private String defaultBillingAddressId;
     private String defaultShippingAddressId;
     
     private String companyName;
+    @Column(name = "first_name")
     private String firstName;
+    @Column(name = "last_name")
     private String lastName;
+    
+    private String phone;
+    
+    @Column(name = "has_account")
+    private Boolean hasAccount;
     
     @OneToMany(mappedBy = "customer", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @Builder.Default
     private List<Address> addresses = new ArrayList<>();
 
-    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Object> metadata;
 
     @Column(name = "created_at")
@@ -53,6 +61,9 @@ public class Customer {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @ManyToMany
     @JoinTable(
@@ -66,6 +77,9 @@ public class Customer {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (hasAccount == null) {
+            hasAccount = true;
+        }
     }
 
     @PreUpdate

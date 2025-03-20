@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.List;
+import com.qvtu.mallshopping.enums.PaymentCollectionStatus;
 
 @Data
 @Entity
@@ -20,10 +21,9 @@ public class PaymentCollection {
     @JoinColumn(name = "order_id", nullable = false, foreignKey = @ForeignKey(name = "fk_payment_collection_order"))
     private Order order;
     
-    @Column(nullable = false)
+    @Column(name = "currency_code")
     private String currencyCode;
     
-    @Column(nullable = false)
     private BigDecimal amount;
     
     @Column(name = "authorized_amount")
@@ -41,8 +41,9 @@ public class PaymentCollection {
     @Column(columnDefinition = "jsonb")
     private String metadata;
     
-    @Column(nullable = false)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private PaymentCollectionStatus status;
     
     @OneToMany(mappedBy = "paymentCollection", cascade = CascadeType.ALL)
     private List<PaymentSession> paymentSessions;

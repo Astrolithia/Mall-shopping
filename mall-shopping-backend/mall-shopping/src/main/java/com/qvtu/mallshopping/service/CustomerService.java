@@ -29,6 +29,8 @@ import com.qvtu.mallshopping.dto.CustomerGroupCreateRequest;
 import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 import com.qvtu.mallshopping.dto.CustomerGroupUpdateRequest;
 import java.util.Collections;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import com.qvtu.mallshopping.dto.CustomerRegisterRequest;
 
 @Service
 @Slf4j
@@ -44,6 +46,9 @@ public class CustomerService {
 
     @Autowired
     private CustomerGroupRepository customerGroupRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public Map<String, Object> listCustomers(int page, int size) {
         log.info("获取客户列表, 页码: {}, 每页数量: {}", page, size);
@@ -839,5 +844,28 @@ public class CustomerService {
             log.error("获取客户群组中的客户列表失败, 群组ID: {}", groupId, e);
             throw e;
         }
+    }
+
+    public Customer createCustomer(CustomerRegisterRequest request) {
+        // 检查邮箱是否已存在
+        if (customerRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already exists");
+        }
+        
+        Customer customer = Customer.builder()
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .phone(request.getPhone())
+                .hasAccount(true)
+                .build();
+                
+        return customerRepository.save(customer);
+    }
+    
+    public Customer getCustomerById(Long id) {
+        return customerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
     }
 } 

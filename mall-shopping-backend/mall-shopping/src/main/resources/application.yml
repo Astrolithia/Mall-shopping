@@ -6,10 +6,20 @@ spring:
     username: astrolithia
     password: 030808
     driver-class-name: org.postgresql.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 300000        # 5分钟
+      max-lifetime: 1200000       # 20分钟
+      connection-timeout: 20000   # 20秒
+      pool-name: HikariPool
+      auto-commit: true
+      connection-test-query: SELECT 1
+      transaction-isolation: TRANSACTION_READ_COMMITTED
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none  # 临时改为 none，避免 Hibernate 修改表结构
     show-sql: true
     properties:
       hibernate:
@@ -18,3 +28,36 @@ spring:
         jdbc:
           lob:
             non_contextual_creation: true
+        use_sql_comments: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.qvtu.mallshopping: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.web: DEBUG
+    org.hibernate.type: TRACE
+    org.hibernate.type.descriptor.sql: TRACE
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"
+
+# 启用控制台颜色输出
+spring.output.ansi.enabled: ALWAYS
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: mappings
+jwt:
+  secret: medusaSecretKey123456789012345678901234567890
+  expiration: 86400  # 24小时，单位秒
+
+server:
+  port: 8080  # 添加这个配置确保使用8080端口

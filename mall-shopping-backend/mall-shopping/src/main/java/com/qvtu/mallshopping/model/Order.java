@@ -35,16 +35,16 @@ public class Order {
     @Column(name = "currency_code")
     private String currencyCode;
     
-    @Enumerated(EnumType.STRING)
     @Column(name = "payment_status")
+    @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;
     
-    @Enumerated(EnumType.STRING)
     @Column(name = "fulfillment_status")
+    @Enumerated(EnumType.STRING)
     private FulfillmentStatus fulfillmentStatus;
     
-    @Enumerated(EnumType.STRING)
     @Column(name = "status")
+    @Enumerated(EnumType.STRING)
     private OrderStatus status;
     
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
