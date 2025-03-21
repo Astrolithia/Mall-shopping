@@ -1,9 +1,29 @@
 package com.qvtu.mallshopping.enums;
 
 public enum OrderStatus {
-    pending,         // 待处理
-    completed,       // 已完成
-    canceled,        // 已取消
-    requires_action, // 需要处理
-    archived        // 已归档
+    PENDING("pending"),
+    DRAFT("draft"),
+    COMPLETED("completed"),
+    CANCELLED("cancelled"),
+    ARCHIVED("archived"),
+    REQUIRES_ACTION("requires_action");
+
+    private final String value;
+
+    OrderStatus(String value) {
+        this.value = value;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public static OrderStatus fromValue(String value) {
+        for (OrderStatus status : OrderStatus.values()) {
+            if (status.value.equals(value)) {
+                return status;
+            }
+        }
+        throw new IllegalArgumentException("Unknown OrderStatus value: " + value);
+    }
 } 

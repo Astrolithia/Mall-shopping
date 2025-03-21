@@ -34,7 +34,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(authInterceptor)
-                .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/auth/**"); // 排除后台登录接口
+                .addPathPatterns("/api/**")         // 后台管理接口需要认证
+                .excludePathPatterns("/api/auth/**") // 排除后台登录接口
+                .excludePathPatterns("/store/**");   // 排除商城前台接口
     }
 } 

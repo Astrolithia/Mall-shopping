@@ -20,6 +20,7 @@ import java.util.Random;
 import com.qvtu.mallshopping.enums.OrderStatus;
 import com.qvtu.mallshopping.enums.PaymentStatus;
 import com.qvtu.mallshopping.enums.FulfillmentStatus;
+import com.qvtu.mallshopping.enums.PaymentCollectionStatus;
 
 @Service
 public class PaymentCollectionService {
@@ -52,7 +53,7 @@ public class PaymentCollectionService {
         paymentCollection.setOrder(order);  // 设置订单关联
         paymentCollection.setCurrencyCode(order.getCurrencyCode());
         paymentCollection.setAmount(order.getTotal());
-        paymentCollection.setStatus("awaiting");
+        paymentCollection.setStatus(PaymentCollectionStatus.AWAITING);
         
         // 初始化金额
         paymentCollection.setAuthorizedAmount(BigDecimal.ZERO);
@@ -80,7 +81,7 @@ public class PaymentCollectionService {
         dto.setId(pc.getId().toString());
         dto.setCurrencyCode(pc.getCurrencyCode());
         dto.setAmount(pc.getAmount());
-        dto.setStatus(pc.getStatus());
+        dto.setStatus(pc.getStatus().getValue());
         
         // 修改获取支付提供商的逻辑
         dto.setPaymentProviders(
@@ -103,8 +104,8 @@ public class PaymentCollectionService {
             .orElseThrow(() -> new RuntimeException("Payment collection not found"));
         
         // 检查支付集合状态，只有某些状态下才能删除
-        if ("captured".equals(paymentCollection.getStatus()) || 
-            "authorized".equals(paymentCollection.getStatus())) {
+        if ("captured".equals(paymentCollection.getStatus().getValue()) || 
+            "authorized".equals(paymentCollection.getStatus().getValue())) {
             throw new RuntimeException("Cannot delete payment collection in current status");
         }
         
@@ -120,10 +121,10 @@ public class PaymentCollectionService {
         for (int i = 0; i < 5; i++) {
             // 先创建一个订单
             Order order = new Order();
-            order.setStatus(OrderStatus.draft);
+            order.setStatus(OrderStatus.DRAFT);
             order.setCurrencyCode("CNY");
             order.setTotal(new BigDecimal("100.00").add(new BigDecimal(i * 100)));
-            order.setPaymentStatus(PaymentStatus.not_paid);
+            order.setPaymentStatus(PaymentStatus.PENDING);
             order.setFulfillmentStatus(FulfillmentStatus.not_fulfilled);
             
             LocalDateTime now = LocalDateTime.now();
@@ -138,7 +139,7 @@ public class PaymentCollectionService {
             paymentCollection.setOrder(order);  // 确保设置了订单
             paymentCollection.setCurrencyCode(order.getCurrencyCode());
             paymentCollection.setAmount(order.getTotal());
-            paymentCollection.setStatus("awaiting");
+            paymentCollection.setStatus(PaymentCollectionStatus.AWAITING);
             paymentCollection.setCreatedAt(now);
             paymentCollection.setUpdatedAt(now);
             
@@ -160,10 +161,10 @@ public class PaymentCollectionService {
     public PaymentCollectionDTO generateRandomPaymentCollection() {
         // 先创建一个订单
         Order order = new Order();
-        order.setStatus(OrderStatus.draft);
+        order.setStatus(OrderStatus.DRAFT);
         order.setCurrencyCode("CNY");
         order.setTotal(new BigDecimal(new Random().nextInt(1000000) / 100.0));
-        order.setPaymentStatus(PaymentStatus.not_paid);
+        order.setPaymentStatus(PaymentStatus.PENDING);
         order.setFulfillmentStatus(FulfillmentStatus.not_fulfilled);
         
         LocalDateTime now = LocalDateTime.now();
@@ -178,7 +179,7 @@ public class PaymentCollectionService {
         paymentCollection.setOrder(order);  // 确保设置了订单
         paymentCollection.setCurrencyCode(order.getCurrencyCode());
         paymentCollection.setAmount(order.getTotal());
-        paymentCollection.setStatus("awaiting");
+        paymentCollection.setStatus(PaymentCollectionStatus.AWAITING);
         paymentCollection.setCreatedAt(now);
         paymentCollection.setUpdatedAt(now);
         
@@ -229,12 +230,12 @@ public class PaymentCollectionService {
         }
         
         // 检查当前状态
-        if ("paid".equals(paymentCollection.getStatus())) {
+        if ("paid".equals(paymentCollection.getStatus().getValue())) {
             throw new RuntimeException("Payment collection is already paid");
         }
         
         // 更新状态为已付款
-        paymentCollection.setStatus("paid");
+        paymentCollection.setStatus(PaymentCollectionStatus.fromValue("paid"));
         paymentCollection.setUpdatedAt(LocalDateTime.now());
         
         // 保存更新

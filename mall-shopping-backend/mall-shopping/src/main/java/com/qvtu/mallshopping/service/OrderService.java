@@ -8,6 +8,7 @@ import com.qvtu.mallshopping.repository.OrderChangeRepository;
 import com.qvtu.mallshopping.enums.OrderStatus;
 import com.qvtu.mallshopping.enums.PaymentStatus;
 import com.qvtu.mallshopping.enums.FulfillmentStatus;
+import com.qvtu.mallshopping.enums.PaymentCollectionStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -98,7 +99,7 @@ public class OrderService {
         formatted.put("id", pc.getId());
         formatted.put("currency_code", pc.getCurrencyCode());
         formatted.put("amount", pc.getAmount());
-        formatted.put("status", pc.getStatus());
+        formatted.put("status", pc.getStatus().getValue());
         
         // 格式化支付提供商
         List<Map<String, Object>> providers = pc.getPaymentProviders().stream()
@@ -217,7 +218,7 @@ public class OrderService {
         Order order = new Order();
         
         // 设置基本信息
-        order.setStatus(OrderStatus.draft);
+        order.setStatus(OrderStatus.DRAFT);
         order.setEmail(request.getEmail());
         order.setCustomerId(request.getCustomerId());
         order.setRegionId(request.getRegionId());
@@ -226,7 +227,7 @@ public class OrderService {
         order.setMetadata(request.getMetadata());
         
         // 设置初始状态
-        order.setPaymentStatus(PaymentStatus.not_paid);
+        order.setPaymentStatus(PaymentStatus.PENDING);
         order.setFulfillmentStatus(FulfillmentStatus.not_fulfilled);
         
         // 设置初始金额
@@ -269,7 +270,7 @@ public class OrderService {
             .orElseThrow(() -> new RuntimeException("Draft order not found"));
             
         // 验证是否为草稿订单
-        if (order.getStatus() != OrderStatus.draft) {
+        if (order.getStatus() != OrderStatus.DRAFT) {
             throw new RuntimeException("Order is not a draft order");
         }
         
@@ -307,7 +308,7 @@ public class OrderService {
         dto.setId(pc.getId().toString());
         dto.setCurrencyCode(pc.getCurrencyCode());
         dto.setAmount(pc.getAmount());
-        dto.setStatus(pc.getStatus());
+        dto.setStatus(pc.getStatus().getValue());
         
         if (pc.getPaymentProviders() != null) {
             dto.setPaymentProviders(pc.getPaymentProviders().stream()
@@ -457,19 +458,19 @@ public class OrderService {
             .orElseThrow(() -> new RuntimeException("Order not found"));
         
         // 检查订单状态是否允许存档
-        if (order.getStatus() == OrderStatus.archived) {
+        if (order.getStatus() == OrderStatus.ARCHIVED) {
             throw new RuntimeException("Order is already archived");
         }
         
         // 验证订单是否可以被存档（例如：已完成的订单）
-        if (order.getStatus() != OrderStatus.completed && 
-            order.getStatus() != OrderStatus.canceled) {
+        if (order.getStatus() != OrderStatus.COMPLETED && 
+            order.getStatus() != OrderStatus.CANCELLED) {
             throw new RuntimeException("Only completed or canceled orders can be archived");
         }
         
         // 更新订单状态
         OrderStatus originalStatus = order.getStatus();
-        order.setStatus(OrderStatus.archived);
+        order.setStatus(OrderStatus.ARCHIVED);
         order.setUpdatedAt(LocalDateTime.now());
         
         // 创建变更记录
@@ -489,20 +490,20 @@ public class OrderService {
             .orElseThrow(() -> new RuntimeException("Order not found"));
         
         // 检查订单状态是否允许取消
-        if (order.getStatus() == OrderStatus.canceled) {
+        if (order.getStatus() == OrderStatus.CANCELLED) {
             throw new RuntimeException("Order is already canceled");
         }
         
         // 验证订单是否可以被取消（例如：不能取消已完成的订单）
-        if (order.getStatus() == OrderStatus.completed || 
-            order.getStatus() == OrderStatus.archived) {
+        if (order.getStatus() == OrderStatus.COMPLETED || 
+            order.getStatus() == OrderStatus.ARCHIVED) {
             throw new RuntimeException("Completed or archived orders cannot be canceled");
         }
         
         // 更新订单状态
         OrderStatus originalStatus = order.getStatus();
-        order.setStatus(OrderStatus.canceled);
-        order.setPaymentStatus(PaymentStatus.canceled);
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setPaymentStatus(PaymentStatus.CANCELLED);
         order.setFulfillmentStatus(FulfillmentStatus.canceled);
         order.setUpdatedAt(LocalDateTime.now());
         
@@ -512,8 +513,8 @@ public class OrderService {
         // 取消相关的支付集合
         if (order.getPaymentCollections() != null) {
             order.getPaymentCollections().forEach(pc -> {
-                if (!"canceled".equals(pc.getStatus())) {
-                    pc.setStatus("canceled");
+                if (pc.getStatus() != PaymentCollectionStatus.CANCELLED) {
+                    pc.setStatus(PaymentCollectionStatus.CANCELLED);
                     pc.setUpdatedAt(LocalDateTime.now());
                 }
             });
@@ -595,18 +596,18 @@ public class OrderService {
             .orElseThrow(() -> new RuntimeException("Order not found"));
         
         // 检查订单状态是否允许完成
-        if (order.getStatus() == OrderStatus.completed) {
+        if (order.getStatus() == OrderStatus.COMPLETED) {
             throw new RuntimeException("Order is already completed");
         }
         
         // 验证订单是否可以被完成
-        if (order.getStatus() == OrderStatus.archived || 
-            order.getStatus() == OrderStatus.canceled) {
+        if (order.getStatus() == OrderStatus.ARCHIVED || 
+            order.getStatus() == OrderStatus.CANCELLED) {
             throw new RuntimeException("Archived or canceled orders cannot be completed");
         }
         
         // 检查支付状态
-        if (order.getPaymentStatus() != PaymentStatus.paid) {
+        if (order.getPaymentStatus() != PaymentStatus.PAID) {
             throw new RuntimeException("Cannot complete order with unpaid payment status");
         }
         
@@ -617,7 +618,7 @@ public class OrderService {
         
         // 更新订单状态
         OrderStatus originalStatus = order.getStatus();
-        order.setStatus(OrderStatus.completed);
+        order.setStatus(OrderStatus.COMPLETED);
         order.setUpdatedAt(LocalDateTime.now());
         
         // 创建变更记录

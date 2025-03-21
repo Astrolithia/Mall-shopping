@@ -16,11 +16,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Entity
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
 @Table(name = "customers")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Customer {

@@ -1,14 +1,29 @@
 package com.qvtu.mallshopping.enums;
 
 public enum PaymentStatus {
-    canceled,            // 已取消
-    not_paid,           // 未支付
-    awaiting,           // 等待支付
-    authorized,         // 已授权
-    partially_authorized, // 部分授权
-    captured,           // 已收款
-    partially_captured,  // 部分收款
-    partially_refunded,  // 部分退款
-    refunded,           // 已退款
-    requires_action     // 需要处理
+    PENDING("pending"),
+    PAID("paid"),            // 添加 paid 状态
+    CAPTURED("captured"),
+    REFUNDED("refunded"),
+    CANCELLED("cancelled"),
+    REQUIRES_ACTION("requires_action");
+
+    private final String value;
+
+    PaymentStatus(String value) {
+        this.value = value;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public static PaymentStatus fromValue(String value) {
+        for (PaymentStatus status : PaymentStatus.values()) {
+            if (status.value.equals(value)) {
+                return status;
+            }
+        }
+        throw new IllegalArgumentException("Unknown PaymentStatus value: " + value);
+    }
 } 
