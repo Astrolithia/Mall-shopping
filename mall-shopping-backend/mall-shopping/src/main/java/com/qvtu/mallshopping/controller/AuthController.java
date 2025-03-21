@@ -86,6 +86,17 @@ public class AuthController {
         }
     }
     
+    @DeleteMapping("/session")
+    public ResponseEntity<Map<String, Object>> deleteSession(@RequestHeader(value = "Authorization", required = false) String bearerToken) {
+        // 可以在这里添加令牌黑名单或其他会话清理逻辑
+        // 对于JWT，服务器端通常不需要特殊处理，客户端只需删除令牌
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        
+        return ResponseEntity.ok(response);
+    }
+    
     private Map<String, Object> formatUserResponse(Customer customer) {
         Map<String, Object> formatted = new HashMap<>();
         formatted.put("id", customer.getId().toString());
