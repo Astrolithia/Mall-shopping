@@ -128,6 +128,38 @@ public class AuthController {
         }
     }
     
+    @PostMapping("/customer/emailpass/reset-password/token")
+    public ResponseEntity<Map<String, Object>> resetPassword(@RequestBody Map<String, String> request) {
+        String token = request.get("token");
+        String password = request.get("password");
+        
+        // 验证重置令牌并更新密码
+        Customer customer = customerService.resetPassword(token, password);
+        
+        // 生成新的JWT令牌
+        String jwtToken = jwtTokenProvider.generateToken(customer.getId());
+        
+        // 返回令牌
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", jwtToken);
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * 请求密码重置令牌
+     */
+    @PostMapping("/customer/emailpass/reset-password")
+    public ResponseEntity<Void> requestPasswordReset(@RequestBody Map<String, String> request) {
+        String email = request.get("identifier");
+        
+        // 调用服务生成重置令牌并发送邮件
+        customerService.requestPasswordReset(email);
+        
+        // 返回空响应
+        return ResponseEntity.ok().build();
+    }
+    
     private Map<String, Object> formatUserResponse(Customer customer) {
         Map<String, Object> formatted = new HashMap<>();
         formatted.put("id", customer.getId().toString());

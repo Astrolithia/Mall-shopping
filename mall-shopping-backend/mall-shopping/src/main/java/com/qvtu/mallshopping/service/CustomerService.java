@@ -33,6 +33,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.qvtu.mallshopping.dto.CustomerRegisterRequest;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+import org.hibernate.NonUniqueResultException;
 
 @Service
 @Slf4j
@@ -927,6 +930,79 @@ public class CustomerService {
         
         // 保存客户并返回
         return customerRepository.save(customer);
+    }
+
+    /**
+     * 使用重置令牌重置密码
+     */
+    public Customer resetPassword(String resetToken, String newPassword) {
+        try {
+            if (resetToken == null || resetToken.isEmpty()) {
+                throw new RuntimeException("Reset token cannot be empty");
+            }
+            
+            // 使用新的查询方法
+            Optional<Customer> customerOpt = customerRepository.findByResetPasswordTokenEquals(resetToken);
+            
+            if (!customerOpt.isPresent()) {
+                throw new RuntimeException("Invalid reset token");
+            }
+            
+            Customer customer = customerOpt.get();
+            
+            // 验证令牌是否过期
+            if (customer.getResetPasswordTokenExpiresAt() == null || 
+                customer.getResetPasswordTokenExpiresAt().isBefore(LocalDateTime.now())) {
+                throw new RuntimeException("Reset token has expired");
+            }
+            
+            // 更新密码
+            customer.setPassword(passwordEncoder.encode(newPassword));
+            
+            // 清除重置令牌
+            customer.setResetPasswordToken(null);
+            customer.setResetPasswordTokenExpiresAt(null);
+            
+            // 保存更新后的用户
+            return customerRepository.save(customer);
+        } catch (NonUniqueResultException e) {
+            // 这种情况现在应该不会发生了，但保留作为安全措施
+            log.error("发现重复的密码重置令牌: {}", resetToken);
+            throw new RuntimeException("System error: duplicate reset tokens found");
+        }
+    }
+
+    /**
+     * 请求密码重置
+     */
+    public void requestPasswordReset(String email) {
+        // 查找用户，但不透露用户是否存在
+        Optional<Customer> customerOpt = customerRepository.findByEmail(email);
+        
+        if (customerOpt.isPresent()) {
+            Customer customer = customerOpt.get();
+            
+            // 生成唯一的重置令牌
+            String resetToken;
+            boolean isUnique;
+            
+            do {
+                resetToken = UUID.randomUUID().toString();
+                // 使用新的查询方法检查令牌是否已存在
+                isUnique = !customerRepository.findByResetPasswordTokenEquals(resetToken).isPresent();
+            } while (!isUnique);
+            
+            // 设置令牌有效期（例如24小时）
+            LocalDateTime expiresAt = LocalDateTime.now().plusHours(24);
+            
+            // 存储令牌和过期时间
+            customer.setResetPasswordToken(resetToken);
+            customer.setResetPasswordTokenExpiresAt(expiresAt);
+            customerRepository.save(customer);
+            
+            // 打印令牌用于测试
+            log.info("重置密码令牌已生成: {} 用于邮箱: {}", resetToken, email);
+        }
     }
 
 } 

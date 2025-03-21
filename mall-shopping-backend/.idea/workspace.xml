@@ -5,7 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b1ac2843-4f97-4d53-b3b3-2029f58c811a" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/controller/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/controller/AuthController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/model/Customer.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/model/Customer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/repository/CustomerRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/repository/CustomerRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/service/CustomerService.java" beforeDir="false" afterPath="$PROJECT_DIR$/mall-shopping/src/main/java/com/qvtu/mallshopping/service/CustomerService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -106,7 +110,7 @@
       <option name="presentableId" value="Default" />
       <updated>1741141492913</updated>
       <workItem from="1741141493910" duration="55402000" />
-      <workItem from="1742098185294" duration="57831000" />
+      <workItem from="1742098185294" duration="60016000" />
     </task>
     <servers />
   </component>

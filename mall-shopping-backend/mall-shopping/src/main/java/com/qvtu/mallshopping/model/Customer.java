@@ -70,6 +70,12 @@ public class Customer {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(name = "reset_password_token", unique = true)
+    private String resetPasswordToken;
+
+    @Column(name = "reset_password_token_expires_at")
+    private LocalDateTime resetPasswordTokenExpiresAt;
+
     @ManyToMany
     @JoinTable(
         name = "customer_group_members",
