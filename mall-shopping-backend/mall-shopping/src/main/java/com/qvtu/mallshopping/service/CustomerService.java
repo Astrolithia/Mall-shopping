@@ -1005,4 +1005,78 @@ public class CustomerService {
         }
     }
 
+    /**
+     * 更新用户密码
+     * 
+     * @param userId 用户ID，从JWT令牌中获取
+     * @param email 用户邮箱
+     * @param newPassword 新密码
+     */
+    @Transactional
+    public void updatePassword(Long userId, String email, String newPassword) {
+        // 通过ID获取用户
+        Customer customer = customerRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+        
+        // 验证邮箱是否匹配
+        if (!customer.getEmail().equals(email)) {
+            throw new RuntimeException("Email does not match the authenticated user");
+        }
+        
+        // 更新密码
+        customer.setPassword(passwordEncoder.encode(newPassword));
+        
+        // 保存更新
+        customerRepository.save(customer);
+    }
+
+    /**
+     * 创建商店客户
+     * 
+     * @param email 电子邮箱（必填）
+     * @param companyName 公司名称（可选）
+     * @param firstName 名字（可选）
+     * @param lastName 姓氏（可选）
+     * @param phone 电话（可选）
+     * @param metadata 元数据（可选）
+     * @return 创建的客户对象
+     */
+    @Transactional
+    public Customer createStoreCustomer(String email, String companyName, String firstName, 
+                                  String lastName, String phone, Map<String, Object> metadata) {
+        // 检查邮箱是否为空
+        if (email == null || email.trim().isEmpty()) {
+            throw new RuntimeException("Email is required");
+        }
+        
+        // 检查邮箱是否已被注册
+        if (customerRepository.existsByEmail(email)) {
+            throw new RuntimeException("Email already in use");
+        }
+        
+        // 创建新客户
+        Customer customer = new Customer();
+        customer.setEmail(email);
+        customer.setCompanyName(companyName);
+        customer.setFirstName(firstName);
+        customer.setLastName(lastName);
+        customer.setPhone(phone);
+        customer.setHasAccount(true);
+        
+        // 设置元数据
+        if (metadata != null) {
+            customer.setMetadata(metadata);
+        } else {
+            customer.setMetadata(new HashMap<>());
+        }
+        
+        // 设置时间戳
+        LocalDateTime now = LocalDateTime.now();
+        customer.setCreatedAt(now);
+        customer.setUpdatedAt(now);
+        
+        // 保存并返回客户
+        return customerRepository.save(customer);
+    }
+
 } 

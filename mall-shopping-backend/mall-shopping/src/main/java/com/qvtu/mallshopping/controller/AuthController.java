@@ -128,22 +128,40 @@ public class AuthController {
         }
     }
     
+    /**
+     * 重置用户密码
+     * 使用重置密码令牌来重置密码
+     */
     @PostMapping("/customer/emailpass/reset-password/token")
-    public ResponseEntity<Map<String, Object>> resetPassword(@RequestBody Map<String, String> request) {
-        String token = request.get("token");
-        String password = request.get("password");
+    public ResponseEntity<Map<String, Object>> resetPassword(
+            @RequestHeader("Authorization") String bearerToken,
+            @RequestBody Map<String, String> request) {
         
-        // 验证重置令牌并更新密码
-        Customer customer = customerService.resetPassword(token, password);
-        
-        // 生成新的JWT令牌
-        String jwtToken = jwtTokenProvider.generateToken(customer.getId());
-        
-        // 返回令牌
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", jwtToken);
-        
-        return ResponseEntity.ok(response);
+        try {
+            // 从Authorization头中提取重置令牌
+            if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            String resetToken = bearerToken.substring(7);
+            
+            // 获取新密码
+            String password = request.get("password");
+            
+            // 使用重置令牌重置密码
+            Customer customer = customerService.resetPassword(resetToken, password);
+            
+            // 生成新的JWT令牌
+            String jwtToken = jwtTokenProvider.generateToken(customer.getId());
+            
+            // 返回令牌
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", jwtToken);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
+        }
     }
     
     /**
@@ -158,6 +176,48 @@ public class AuthController {
         
         // 返回空响应
         return ResponseEntity.ok().build();
+    }
+    
+    /**
+     * 更新用户密码
+     * 允许已登录用户更新自己的密码
+     */
+    @PostMapping("/customer/emailpass/update")
+    public ResponseEntity<Map<String, Object>> updatePassword(
+            @RequestHeader("Authorization") String bearerToken,
+            @RequestBody Map<String, String> request) {
+        
+        try {
+            // 从Authorization头中提取令牌
+            if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            String token = bearerToken.substring(7);
+            
+            // 验证令牌
+            if (!jwtTokenProvider.validateToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            // 从令牌中获取用户ID
+            Long userId = jwtTokenProvider.getUserIdFromJWT(token);
+            
+            // 获取请求中的电子邮件和新密码
+            String email = request.get("email");
+            String newPassword = request.get("password");
+            
+            // 更新密码
+            customerService.updatePassword(userId, email, newPassword);
+            
+            // 返回成功响应
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
     }
     
     private Map<String, Object> formatUserResponse(Customer customer) {
