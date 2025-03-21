@@ -97,6 +97,37 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
     
+    @PostMapping("/token/refresh")
+    public ResponseEntity<Map<String, Object>> refreshToken(@RequestHeader("Authorization") String bearerToken) {
+        try {
+            // 从Authorization头中提取令牌
+            if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            String token = bearerToken.substring(7);
+            
+            // 验证令牌
+            if (!jwtTokenProvider.validateToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            // 从令牌中获取用户ID
+            Long userId = jwtTokenProvider.getUserIdFromJWT(token);
+            
+            // 生成新的JWT令牌
+            String newToken = jwtTokenProvider.generateToken(userId);
+            
+            // 返回新令牌
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", newToken);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+    }
+    
     private Map<String, Object> formatUserResponse(Customer customer) {
         Map<String, Object> formatted = new HashMap<>();
         formatted.put("id", customer.getId().toString());
