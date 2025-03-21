@@ -3,8 +3,8 @@ package com.qvtu.mallshopping.controller;
 import com.qvtu.mallshopping.dto.CustomerRegisterRequest;
 import com.qvtu.mallshopping.model.Customer;
 import com.qvtu.mallshopping.service.CustomerService;
+import com.qvtu.mallshopping.security.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -13,19 +13,30 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/store")
+@RequestMapping("/store/customers")
 @Slf4j
 public class StoreCustomerController {
     
-    @Autowired
-    private CustomerService customerService;
-    
-    @PostMapping("/customers")
+    private final CustomerService customerService;
+    private final JwtTokenProvider jwtTokenProvider;
+
+    public StoreCustomerController(CustomerService customerService, JwtTokenProvider jwtTokenProvider) {
+        this.customerService = customerService;
+        this.jwtTokenProvider = jwtTokenProvider;
+    }
+
+    @PostMapping
     public ResponseEntity<Map<String, Object>> registerCustomer(@Valid @RequestBody CustomerRegisterRequest request) {
         log.info("收到商城客户注册请求: {}", request.getEmail());
-        Customer customer = customerService.createCustomer(request);
+        Customer customer = customerService.registerCustomer(request);
+        
+        // 生成JWT令牌
+        String token = jwtTokenProvider.generateToken(customer.getId());
+        
+        // 构建响应
         Map<String, Object> response = new HashMap<>();
-        response.put("customer", formatCustomerResponse(customer));
+        response.put("token", token);  // 只返回令牌
+        
         return ResponseEntity.ok(response);
     }
     

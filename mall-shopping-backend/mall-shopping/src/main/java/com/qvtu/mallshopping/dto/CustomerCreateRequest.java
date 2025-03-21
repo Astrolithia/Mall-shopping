@@ -6,6 +6,7 @@ import java.util.Map;
 @Data
 public class CustomerCreateRequest {
     private String email;
+    private String password;
     private String companyName;
     private String firstName;
     private String lastName;

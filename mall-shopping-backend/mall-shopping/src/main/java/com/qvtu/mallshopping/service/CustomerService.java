@@ -31,6 +31,8 @@ import com.qvtu.mallshopping.dto.CustomerGroupUpdateRequest;
 import java.util.Collections;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.qvtu.mallshopping.dto.CustomerRegisterRequest;
+import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 
 @Service
 @Slf4j
@@ -77,8 +79,19 @@ public class CustomerService {
         formatted.put("id", customer.getId().toString());
         formatted.put("has_account", customer.getHasAccount());
         formatted.put("email", customer.getEmail());
-        formatted.put("default_billing_address_id", customer.getDefaultBillingAddressId());
-        formatted.put("default_shipping_address_id", customer.getDefaultShippingAddressId());
+        
+        if (customer.getDefaultBillingAddress() != null) {
+            formatted.put("default_billing_address_id", customer.getDefaultBillingAddress().getId().toString());
+        } else {
+            formatted.put("default_billing_address_id", null);
+        }
+        
+        if (customer.getDefaultShippingAddress() != null) {
+            formatted.put("default_shipping_address_id", customer.getDefaultShippingAddress().getId().toString());
+        } else {
+            formatted.put("default_shipping_address_id", null);
+        }
+        
         formatted.put("company_name", customer.getCompanyName());
         formatted.put("first_name", customer.getFirstName());
         formatted.put("last_name", customer.getLastName());
@@ -95,8 +108,8 @@ public class CustomerService {
         Map<String, Object> formatted = new HashMap<>();
         formatted.put("id", address.getId().toString());
         formatted.put("address_name", address.getAddressName());
-        formatted.put("is_default_shipping", address.getIsDefaultShipping());
-        formatted.put("is_default_billing", address.getIsDefaultBilling());
+        formatted.put("is_default_shipping", address.isDefaultShipping());
+        formatted.put("is_default_billing", address.isDefaultBilling());
         formatted.put("customer_id", address.getCustomer().getId().toString());
         formatted.put("company", address.getCompany());
         formatted.put("first_name", address.getFirstName());
@@ -156,8 +169,8 @@ public class CustomerService {
                 log.info("客户默认地址创建成功, ID: {}", address.getId());
 
                 customer.getAddresses().add(address);
-                customer.setDefaultBillingAddressId(address.getId().toString());
-                customer.setDefaultShippingAddressId(address.getId().toString());
+                customer.setDefaultBillingAddress(address);
+                customer.setDefaultShippingAddress(address);
                 customer = customerRepository.save(customer);
             }
 
@@ -217,7 +230,7 @@ public class CustomerService {
         // 如果提供了新的电话号码，更新或创建默认地址
         if (request.getPhone() != null) {
             Address defaultAddress = customer.getAddresses().stream()
-                .filter(addr -> Boolean.TRUE.equals(addr.getIsDefaultBilling()))
+                .filter(addr -> Boolean.TRUE.equals(addr.isDefaultBilling()))
                 .findFirst()
                 .orElse(Address.builder()
                     .customer(customer)
@@ -236,8 +249,8 @@ public class CustomerService {
 
             if (!customer.getAddresses().contains(defaultAddress)) {
                 customer.getAddresses().add(defaultAddress);
-                customer.setDefaultBillingAddressId(defaultAddress.getId().toString());
-                customer.setDefaultShippingAddressId(defaultAddress.getId().toString());
+                customer.setDefaultBillingAddress(defaultAddress);
+                customer.setDefaultShippingAddress(defaultAddress);
             }
         }
 
@@ -322,8 +335,8 @@ public class CustomerService {
             address = addressRepository.save(address);
 
             customer.getAddresses().add(address);
-            customer.setDefaultBillingAddressId(address.getId().toString());
-            customer.setDefaultShippingAddressId(address.getId().toString());
+            customer.setDefaultBillingAddress(address);
+            customer.setDefaultShippingAddress(address);
             customer = customerRepository.save(customer);
 
             customers.add(customer);
@@ -846,27 +859,74 @@ public class CustomerService {
         }
     }
 
-    public Customer createCustomer(CustomerRegisterRequest request) {
-        // 检查邮箱是否已存在
-        if (customerRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exists");
+    @Transactional
+    public Customer registerCustomer(CustomerRegisterRequest request) {
+        // 检查邮箱是否已被注册
+        if (customerRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email already in use");
         }
         
-        Customer customer = Customer.builder()
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .phone(request.getPhone())
-                .hasAccount(true)
-                .build();
-                
+        // 创建新客户
+        Customer customer = new Customer();
+        customer.setEmail(request.getEmail());
+        customer.setPassword(passwordEncoder.encode(request.getPassword()));
+        customer.setFirstName(request.getFirstName());
+        customer.setLastName(request.getLastName());
+        customer.setPhone(request.getPhone());
+        customer.setHasAccount(true);
+        
+        // 设置时间戳
+        LocalDateTime now = LocalDateTime.now();
+        customer.setCreatedAt(now);
+        customer.setUpdatedAt(now);
+        
+        // 保存客户并返回
         return customerRepository.save(customer);
     }
     
     public Customer getCustomerById(Long id) {
         return customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
+    }
+
+    /**
+     * 验证客户凭据并返回客户信息
+     */
+    public Customer authenticateCustomer(String email, String password) {
+        Customer customer = customerRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+        
+        // 验证密码
+        if (!passwordEncoder.matches(password, customer.getPassword())) {
+            throw new RuntimeException("Invalid email or password");
+        }
+        
+        return customer;
+    }
+
+    /**
+     * 创建基本客户（只有邮箱和密码）
+     */
+    @Transactional
+    public Customer createBasicCustomer(String email, String password) {
+        // 检查邮箱是否已被注册
+        if (customerRepository.existsByEmail(email)) {
+            throw new RuntimeException("Email already in use");
+        }
+        
+        // 创建新客户
+        Customer customer = new Customer();
+        customer.setEmail(email);
+        customer.setPassword(passwordEncoder.encode(password));
+        customer.setHasAccount(true);
+        
+        // 设置时间戳
+        LocalDateTime now = LocalDateTime.now();
+        customer.setCreatedAt(now);
+        customer.setUpdatedAt(now);
+        
+        // 保存客户并返回
+        return customerRepository.save(customer);
     }
 
 } 

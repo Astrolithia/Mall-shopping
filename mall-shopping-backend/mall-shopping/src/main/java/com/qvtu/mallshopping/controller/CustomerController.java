@@ -281,7 +281,7 @@ public class CustomerController {
 
     @PostMapping("/customers")
     public ResponseEntity<Map<String, Object>> registerCustomer(@Valid @RequestBody CustomerRegisterRequest request) {
-        Customer customer = customerService.createCustomer(request);
+        Customer customer = customerService.registerCustomer(request);
         Map<String, Object> response = new HashMap<>();
         response.put("customer", formatCustomerResponse(customer));
         return ResponseEntity.ok(response);
@@ -306,5 +306,15 @@ public class CustomerController {
         Map<String, Object> response = new HashMap<>();
         response.put("customer", customer);
         return ResponseEntity.ok(response);
+    }
+
+    private CustomerCreateRequest convertToCreateRequest(CustomerRegisterRequest request) {
+        CustomerCreateRequest createRequest = new CustomerCreateRequest();
+        createRequest.setEmail(request.getEmail());
+        createRequest.setPassword(request.getPassword());
+        createRequest.setFirstName(request.getFirstName());
+        createRequest.setLastName(request.getLastName());
+        createRequest.setPhone(request.getPhone());
+        return createRequest;
     }
 } 

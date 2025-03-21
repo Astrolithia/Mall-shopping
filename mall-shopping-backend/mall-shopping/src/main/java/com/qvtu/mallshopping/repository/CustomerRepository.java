@@ -12,4 +12,7 @@ import java.util.Optional;
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
     Page<Customer> findAll(Pageable pageable);
     Optional<Customer> findByEmail(String email);
+    
+    // 添加这个方法来检查邮箱是否存在
+    boolean existsByEmail(String email);
 } 

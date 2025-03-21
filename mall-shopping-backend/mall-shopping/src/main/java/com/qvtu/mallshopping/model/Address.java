@@ -23,13 +23,12 @@ public class Address {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String addressName;
-    private Boolean isDefaultShipping;
-    private Boolean isDefaultBilling;
-
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id")
     private Customer customer;
+    
+    @Column(name = "address_name")
+    private String addressName;
 
     private String company;
     private String firstName;
@@ -41,6 +40,12 @@ public class Address {
     private String province;
     private String postalCode;
     private String phone;
+
+    @Column(name = "is_default_shipping")
+    private boolean isDefaultShipping;
+    
+    @Column(name = "is_default_billing")
+    private boolean isDefaultBilling;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")

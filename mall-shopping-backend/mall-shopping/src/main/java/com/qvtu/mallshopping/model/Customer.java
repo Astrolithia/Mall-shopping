@@ -34,8 +34,17 @@ public class Customer {
     @Column(nullable = false)
     private String password;
     
-    private String defaultBillingAddressId;
-    private String defaultShippingAddressId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "default_billing_address_id")
+    private Address defaultBillingAddress;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "default_shipping_address_id")
+    private Address defaultShippingAddress;
+
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Address> addresses = new ArrayList<>();
     
     private String companyName;
     @Column(name = "first_name")
@@ -47,10 +56,6 @@ public class Customer {
     
     @Column(name = "has_account")
     private Boolean hasAccount;
-    
-    @OneToMany(mappedBy = "customer", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    @Builder.Default
-    private List<Address> addresses = new ArrayList<>();
 
     @Column(columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)

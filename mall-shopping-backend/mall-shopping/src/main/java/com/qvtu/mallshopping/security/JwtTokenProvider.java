@@ -30,13 +30,20 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    /**
+     * 从JWT令牌中获取用户ID
+     */
     public Long getUserIdFromJWT(String token) {
-        Claims claims = Jwts.parser()
-                .setSigningKey(jwtSecret)
-                .parseClaimsJws(token)
-                .getBody();
-
-        return Long.parseLong(claims.getSubject());
+        try {
+            Claims claims = Jwts.parser()
+                    .setSigningKey(jwtSecret)
+                    .parseClaimsJws(token)
+                    .getBody();
+            
+            return Long.parseLong(claims.getSubject());
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid JWT token");
+        }
     }
 
     public boolean validateToken(String authToken) {
