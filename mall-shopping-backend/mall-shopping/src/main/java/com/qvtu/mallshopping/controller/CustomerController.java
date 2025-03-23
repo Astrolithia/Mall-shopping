@@ -6,6 +6,7 @@ import com.qvtu.mallshopping.dto.CustomerGroupCreateRequest;
 import com.qvtu.mallshopping.dto.CustomerGroupUpdateRequest;
 import com.qvtu.mallshopping.dto.CustomerRegisterRequest;
 import com.qvtu.mallshopping.model.Customer;
+import com.qvtu.mallshopping.model.Address;
 import com.qvtu.mallshopping.exception.ResourceNotFoundException;
 import com.qvtu.mallshopping.service.CustomerService;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/customers")
@@ -316,5 +319,57 @@ public class CustomerController {
         createRequest.setLastName(request.getLastName());
         createRequest.setPhone(request.getPhone());
         return createRequest;
+    }
+
+    /**
+     * 为指定客户生成随机测试地址
+     */
+    @PostMapping("/{id}/generate-addresses")
+    public ResponseEntity<Map<String, Object>> generateAddresses(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "3") int count) {
+        
+        try {
+            List<Address> addresses = customerService.generateRandomAddresses(id, count);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("customer_id", id);
+            response.put("addresses", addresses.stream()
+                    .map(this::formatAddressResponse)
+                    .collect(Collectors.toList()));
+            response.put("count", addresses.size());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            errorResponse.put("message", "生成地址失败");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+    }
+
+    /**
+     * 格式化地址响应
+     */
+    private Map<String, Object> formatAddressResponse(Address address) {
+        Map<String, Object> formatted = new HashMap<>();
+        formatted.put("id", address.getId().toString());
+        formatted.put("address_name", address.getAddressName());
+        formatted.put("company", address.getCompany());
+        formatted.put("first_name", address.getFirstName());
+        formatted.put("last_name", address.getLastName());
+        formatted.put("address_1", address.getAddress1());
+        formatted.put("address_2", address.getAddress2());
+        formatted.put("city", address.getCity());
+        formatted.put("country_code", address.getCountryCode());
+        formatted.put("province", address.getProvince());
+        formatted.put("postal_code", address.getPostalCode());
+        formatted.put("phone", address.getPhone());
+        formatted.put("is_default_shipping", address.isDefaultShipping());
+        formatted.put("is_default_billing", address.isDefaultBilling());
+        formatted.put("created_at", address.getCreatedAt());
+        formatted.put("updated_at", address.getUpdatedAt());
+        
+        return formatted;
     }
 } 

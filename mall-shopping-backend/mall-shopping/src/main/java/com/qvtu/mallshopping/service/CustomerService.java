@@ -1079,4 +1079,411 @@ public class CustomerService {
         return customerRepository.save(customer);
     }
 
+    /**
+     * 更新客户信息
+     * 
+     * @param customerId 客户ID
+     * @param companyName 公司名称（可选）
+     * @param firstName 名字（可选）
+     * @param lastName 姓氏（可选）
+     * @param phone 电话（可选）
+     * @param metadata 元数据（可选）
+     * @return 更新后的客户对象
+     */
+    @Transactional
+    public Customer updateCustomerInfo(Long customerId, String companyName, String firstName, 
+                             String lastName, String phone, Map<String, Object> metadata) {
+        // 获取客户
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+        
+        // 更新客户信息（仅更新非null字段）
+        if (companyName != null) {
+            customer.setCompanyName(companyName);
+        }
+        if (firstName != null) {
+            customer.setFirstName(firstName);
+        }
+        if (lastName != null) {
+            customer.setLastName(lastName);
+        }
+        if (phone != null) {
+            customer.setPhone(phone);
+        }
+        if (metadata != null) {
+            // 合并现有元数据和新元数据
+            Map<String, Object> existingMetadata = customer.getMetadata();
+            if (existingMetadata == null) {
+                existingMetadata = new HashMap<>();
+            }
+            existingMetadata.putAll(metadata);
+            customer.setMetadata(existingMetadata);
+        }
+        
+        // 更新时间戳
+        customer.setUpdatedAt(LocalDateTime.now());
+        
+        // 保存并返回更新后的客户
+        return customerRepository.save(customer);
+    }
+
+    /**
+     * 获取客户地址列表
+     * 
+     * @param customerId 客户ID
+     * @param limit 每页限制
+     * @param offset 偏移量
+     * @return 地址列表及分页信息
+     */
+    public Map<String, Object> getCustomerAddresses(Long customerId, int limit, int offset) {
+        // 获取客户
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+        
+        // 获取所有地址
+        List<Address> addresses = customer.getAddresses();
+        
+        // 计算总数
+        int count = addresses.size();
+        
+        // 应用分页
+        List<Address> pagedAddresses;
+        if (offset < count) {
+            int endIndex = Math.min(offset + limit, count);
+            pagedAddresses = addresses.subList(offset, endIndex);
+        } else {
+            pagedAddresses = new ArrayList<>();
+        }
+        
+        // 格式化响应
+        List<Map<String, Object>> formattedAddresses = pagedAddresses.stream()
+                .map(this::formatAddressResponse)
+                .collect(Collectors.toList());
+        
+        // 构建响应
+        Map<String, Object> response = new HashMap<>();
+        response.put("addresses", formattedAddresses);
+        response.put("count", count);
+        response.put("limit", limit);
+        response.put("offset", offset);
+        
+        return response;
+    }
+
+    /**
+     * 为客户添加新地址
+     * 
+     * @param customerId 客户ID
+     * @param firstName 名字
+     * @param lastName 姓氏
+     * @param phone 电话号码
+     * @param company 公司名称
+     * @param address1 地址行1
+     * @param address2 地址行2
+     * @param city 城市
+     * @param countryCode 国家代码
+     * @param province 省/州
+     * @param postalCode 邮政编码
+     * @param addressName 地址名称
+     * @param metadata 元数据
+     * @return 更新后的客户对象
+     */
+    @Transactional
+    public Customer addCustomerAddress(
+            Long customerId, String firstName, String lastName, String phone,
+            String company, String address1, String address2, String city,
+            String countryCode, String province, String postalCode,
+            String addressName, Map<String, Object> metadata) {
+        
+        // 获取客户
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+        
+        // 创建新地址
+        Address address = new Address();
+        address.setCustomer(customer);
+        address.setFirstName(firstName);
+        address.setLastName(lastName);
+        address.setPhone(phone);
+        address.setCompany(company);
+        address.setAddress1(address1);
+        address.setAddress2(address2);
+        address.setCity(city);
+        address.setCountryCode(countryCode);
+        address.setProvince(province);
+        address.setPostalCode(postalCode);
+        address.setAddressName(addressName);
+        
+        // 设置元数据
+        if (metadata != null) {
+            address.setMetadata(metadata);
+        }
+        
+        // 如果是客户的第一个地址，则设置为默认地址
+        if (customer.getAddresses() == null || customer.getAddresses().isEmpty()) {
+            address.setDefaultShipping(true);
+            address.setDefaultBilling(true);
+            customer.setDefaultShippingAddress(address);
+            customer.setDefaultBillingAddress(address);
+        }
+        
+        // 保存地址
+        Address savedAddress = addressRepository.save(address);
+        
+        // 更新客户地址列表
+        if (customer.getAddresses() == null) {
+            customer.setAddresses(new ArrayList<>());
+        }
+        customer.getAddresses().add(savedAddress);
+        
+        // 如果设置了默认地址，更新客户的默认地址引用
+        if (address.isDefaultShipping()) {
+            customer.setDefaultShippingAddress(savedAddress);
+        }
+        if (address.isDefaultBilling()) {
+            customer.setDefaultBillingAddress(savedAddress);
+        }
+        
+        // 保存并返回更新后的客户
+        return customerRepository.save(customer);
+    }
+
+    /**
+     * 获取客户的特定地址
+     * 
+     * @param customerId 客户ID
+     * @param addressId 地址ID
+     * @return 地址对象
+     * @throws RuntimeException 如果地址不存在或不属于该客户
+     */
+    public Address getCustomerAddress(Long customerId, Long addressId) {
+        // 获取客户
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+        
+        // 获取地址
+        Address address = addressRepository.findById(addressId)
+                .orElseThrow(() -> new RuntimeException("Address not found"));
+        
+        // 验证地址是否属于该客户
+        if (!address.getCustomer().getId().equals(customerId)) {
+            throw new RuntimeException("Address does not belong to the customer");
+        }
+        
+        return address;
+    }
+
+    /**
+     * 更新客户地址
+     * 
+     * @param customerId 客户ID
+     * @param addressId 要更新的地址ID
+     * @param firstName 名字（可选）
+     * @param lastName 姓氏（可选）
+     * @param phone 电话号码（可选）
+     * @param company 公司名称（可选）
+     * @param address1 地址行1（可选）
+     * @param address2 地址行2（可选）
+     * @param city 城市（可选）
+     * @param countryCode 国家代码（可选）
+     * @param province 省/州（可选）
+     * @param postalCode 邮政编码（可选）
+     * @param addressName 地址名称（可选）
+     * @param metadata 元数据（可选）
+     * @param isDefaultShipping 是否为默认配送地址（可选）
+     * @param isDefaultBilling 是否为默认账单地址（可选）
+     * @return 更新后的客户对象
+     */
+    @Transactional
+    public Customer updateCustomerAddress(
+            Long customerId, Long addressId, String firstName, String lastName,
+            String phone, String company, String address1, String address2,
+            String city, String countryCode, String province, String postalCode,
+            String addressName, Map<String, Object> metadata,
+            Boolean isDefaultShipping, Boolean isDefaultBilling) {
+        
+        // 获取客户
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+        
+        // 获取地址
+        Address address = addressRepository.findById(addressId)
+                .orElseThrow(() -> new RuntimeException("Address not found"));
+        
+        // 验证地址是否属于该客户
+        if (!address.getCustomer().getId().equals(customerId)) {
+            throw new RuntimeException("Address does not belong to the customer");
+        }
+        
+        // 更新地址信息（仅更新非null字段）
+        if (firstName != null) {
+            address.setFirstName(firstName);
+        }
+        if (lastName != null) {
+            address.setLastName(lastName);
+        }
+        if (phone != null) {
+            address.setPhone(phone);
+        }
+        if (company != null) {
+            address.setCompany(company);
+        }
+        if (address1 != null) {
+            address.setAddress1(address1);
+        }
+        if (address2 != null) {
+            address.setAddress2(address2);
+        }
+        if (city != null) {
+            address.setCity(city);
+        }
+        if (countryCode != null) {
+            address.setCountryCode(countryCode);
+        }
+        if (province != null) {
+            address.setProvince(province);
+        }
+        if (postalCode != null) {
+            address.setPostalCode(postalCode);
+        }
+        if (addressName != null) {
+            address.setAddressName(addressName);
+        }
+        if (metadata != null) {
+            // 合并现有元数据和新元数据
+            Map<String, Object> existingMetadata = address.getMetadata();
+            if (existingMetadata == null) {
+                existingMetadata = new HashMap<>();
+            }
+            existingMetadata.putAll(metadata);
+            address.setMetadata(existingMetadata);
+        }
+        
+        // 保存更新后的地址
+        addressRepository.save(address);
+        
+        // 处理默认地址设置
+        if (isDefaultShipping != null) {
+            address.setDefaultShipping(isDefaultShipping);
+            if (isDefaultShipping) {
+                customer.setDefaultShippingAddress(address);
+            } else if (customer.getDefaultShippingAddress() != null && 
+                       customer.getDefaultShippingAddress().getId().equals(address.getId())) {
+                customer.setDefaultShippingAddress(null);
+            }
+        }
+
+        if (isDefaultBilling != null) {
+            address.setDefaultBilling(isDefaultBilling);
+            if (isDefaultBilling) {
+                customer.setDefaultBillingAddress(address);
+            } else if (customer.getDefaultBillingAddress() != null && 
+                       customer.getDefaultBillingAddress().getId().equals(address.getId())) {
+                customer.setDefaultBillingAddress(null);
+            }
+        }
+        
+        // 返回更新后的客户（包含所有地址）
+        return customer;
+    }
+
+    /**
+     * 删除客户地址
+     * 
+     * @param customerId 客户ID
+     * @param addressId 要删除的地址ID
+     * @return 被删除的地址ID
+     * @throws RuntimeException 如果地址不存在或不属于该客户
+     */
+    @Transactional
+    public Long deleteCustomerAddress(Long customerId, Long addressId) {
+        // 获取客户
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("客户不存在"));
+        
+        // 获取地址
+        Address address = addressRepository.findById(addressId)
+                .orElseThrow(() -> new RuntimeException("地址不存在"));
+        
+        // 验证地址是否属于该客户
+        if (!address.getCustomer().getId().equals(customerId)) {
+            throw new RuntimeException("地址不属于该客户");
+        }
+        
+        // 如果是默认地址，清除客户的默认地址引用
+        if (customer.getDefaultShippingAddress() != null && 
+            customer.getDefaultShippingAddress().getId().equals(addressId)) {
+            customer.setDefaultShippingAddress(null);
+        }
+        
+        if (customer.getDefaultBillingAddress() != null && 
+            customer.getDefaultBillingAddress().getId().equals(addressId)) {
+            customer.setDefaultBillingAddress(null);
+        }
+        
+        // 更新客户（移除关联的地址）
+        if (customer.getAddresses() != null) {
+            customer.getAddresses().removeIf(a -> a.getId().equals(addressId));
+            customerRepository.save(customer);
+        }
+        
+        // 删除地址
+        addressRepository.deleteById(addressId);
+        
+        return addressId;
+    }
+
+    /**
+     * 生成随机测试地址
+     * 
+     * @param customerId 客户ID，地址将关联到该客户
+     * @param count 要生成的地址数量
+     * @return 生成的地址列表
+     */
+    @Transactional
+    public List<Address> generateRandomAddresses(Long customerId, int count) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("客户不存在"));
+        
+        Faker faker = new Faker(new Locale("zh", "CN"));
+        List<Address> addresses = new ArrayList<>();
+        
+        for (int i = 0; i < count; i++) {
+            Address address = Address.builder()
+                    .customer(customer)
+                    .addressName("地址 " + (i + 1))
+                    .company(faker.company().name())
+                    .firstName(faker.name().firstName())
+                    .lastName(faker.name().lastName())
+                    .address1(faker.address().streetAddress())
+                    .address2(faker.address().secondaryAddress())
+                    .city(faker.address().city())
+                    .countryCode("CN")
+                    .province(faker.address().state())
+                    .postalCode(faker.address().zipCode())
+                    .phone(faker.phoneNumber().cellPhone())
+                    .isDefaultShipping(i == 0) // 第一个地址设为默认送货地址
+                    .isDefaultBilling(i == 0)  // 第一个地址设为默认账单地址
+                    .metadata(new HashMap<>())
+                    .build();
+            
+            addresses.add(addressRepository.save(address));
+            
+            // 如果是第一个地址，设置为客户的默认地址
+            if (i == 0) {
+                customer.setDefaultShippingAddress(address);
+                customer.setDefaultBillingAddress(address);
+            }
+        }
+        
+        // 更新客户的地址列表
+        if (customer.getAddresses() == null) {
+            customer.setAddresses(new ArrayList<>());
+        }
+        customer.getAddresses().addAll(addresses);
+        customerRepository.save(customer);
+        
+        return addresses;
+    }
+
 } 
